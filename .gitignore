@@ -1,0 +1,61 @@
+# Build folders
+build/
+bin/
+obj/
+
+# Object files
+*.o
+*.obj
+
+# Executables
+*.exe
+*.out
+
+# Libraries
+*.a
+*.lib
+*.dll
+
+# Debug symbols
+*.pdb
+*.ilk
+
+# VS Code workspace settings (optional)
+.vscode/
+
+# Visual Studio files
+.vs/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Git
+.git/
+
+# MSYS2 / GCC dependency files
+*.d
+
+# Backup files
+*.bak
+
+# User-specific files
+*.user
+
+# CLion / JetBrains
+.idea/
+
+# macOS (if repository is ever opened on macOS)
+.DS_Store
