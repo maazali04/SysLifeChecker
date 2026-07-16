@@ -15,8 +15,8 @@ int main()
     SystemInfo pc = GetSystemInfo();
 
     // TestCPU(pc.CPU);
-    TestRAM(pc.RAM);
-    // TestStorage(pc.Storage);
+    // TestRAM(pc.RAM);
+    TestStorage(pc.Storage);
     // TestGPU(pc.GPUs);
     // TestBattery(pc.Battery);
     // TestNetwork(pc.Network);

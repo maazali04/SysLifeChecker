@@ -1,5 +1,6 @@
 #include "RAM.hpp"
 #include "Test.hpp"
+#include "Storage.hpp"
 
 #include <iostream>
 
@@ -142,9 +143,6 @@ void TestCPU(const CPUInfo &cpu)
 #undef PRINT_FEATURE
 }
 
-
-
-
 void TestRAM(const RAMInfo &ram)
 {
 
@@ -157,10 +155,10 @@ void TestRAM(const RAMInfo &ram)
     std::cout << "Channel Mode : " << static_cast<int>(ram.ChannelMode) << '\n';
     std::cout << "RAM Type : ";
 
-if (ram.Type == RAMType::Unknown)
-    std::cout << "Not Reported\n";
-else
-    std::cout << RAMTypeToString(ram.Type) << '\n';
+    if (ram.Type == RAMType::Unknown)
+        std::cout << "Not Reported\n";
+    else
+        std::cout << RAMTypeToString(ram.Type) << '\n';
 
     std::cout << "Total Capacity : "
               << ram.TotalCapacityGB
@@ -332,5 +330,165 @@ else
         std::cout << "Rank : "
                   << module.Rank
                   << '\n';
+    }
+}
+
+void TestStorage(const StorageInfo &storage)
+{
+    std::cout << "\n========================================\n";
+    std::cout << "STORAGE INFORMATION\n";
+    std::cout << "========================================\n\n";
+
+    std::cout << "Total Drives : " << storage.TotalDrives << '\n';
+    std::cout << "HDD Count : " << storage.HDDCount << '\n';
+    std::cout << "SSD Count : " << storage.SSDCount << '\n';
+    std::cout << "NVMe Count : " << storage.NVMeCount << '\n';
+
+    std::cout << "Total Capacity : " << storage.TotalCapacityGB << " GB\n";
+    std::cout << "Used Space : " << storage.UsedSpaceGB << " GB\n";
+    std::cout << "Free Space : " << storage.FreeSpaceGB << " GB\n";
+    std::cout << "Usage : " << storage.UsagePercent << "%\n";
+
+    for (size_t i = 0; i < storage.Drives.size(); i++)
+    {
+        const StorageDevice &drive = storage.Drives[i];
+
+        std::cout << "\n----------------------------------------\n";
+        std::cout << "DRIVE " << i + 1 << '\n';
+        std::cout << "----------------------------------------\n";
+
+        std::cout << "Model : " << drive.Model << '\n';
+        std::cout << "Manufacturer : " << drive.Manufacturer << '\n';
+        std::cout << "Serial Number : " << drive.SerialNumber << '\n';
+        std::cout << "Firmware Version : " << drive.FirmwareVersion << '\n';
+        std::cout << "Device ID : " << drive.DeviceID << '\n';
+
+        std::cout << "Media Type : " << drive.MediaType << '\n';
+        std::cout << "PNP Device ID : " << drive.PNPDeviceID << '\n';
+        std::cout << "Status : " << drive.Status << '\n';
+        std::cout << "Install Date : " << drive.InstallDate << '\n';
+        std::cout << "Name : " << drive.Name << '\n';
+        std::cout << "Description : " << drive.Description << '\n';
+
+        std::cout << "Bytes Per Sector : " << drive.BytesPerSector << '\n';
+
+        std::cout << "Health Status : " << drive.HealthStatus << '\n';
+        std::cout << "Recommendation : " << drive.Recommendation << '\n';
+        std::cout << "Is Failing : " << drive.IsFailing << '\n';
+
+        std::cout << "Media Loaded : " << drive.MediaLoaded << '\n';
+        std::cout << "Logical Sector Size : " << drive.LogicalSectorSize << '\n';
+        std::cout << "Physical Sector Size : " << drive.PhysicalSectorSize << '\n';
+
+        std::cout << "Drive Letter : " << drive.DriveLetter << '\n';
+        std::cout << "Volume Name : " << drive.VolumeName << '\n';
+        std::cout << "File System : " << drive.FileSystem << '\n';
+
+        std::cout << "GPT : " << drive.GPT << '\n';
+        std::cout << "MBR : " << drive.MBR << '\n';
+
+        std::cout << "Type : "
+                  << StorageDeviceTypeToString(drive.Type)
+                  << '\n';
+
+        std::cout << "Bus : "
+                  << StorageBusTypeToString(drive.Bus)
+                  << '\n';
+
+        std::cout << "Interface : "
+                  << drive.Interface
+                  << '\n';
+        std::cout << "Protocol : " << drive.Protocol << '\n';
+
+        std::cout << "Capacity : " << drive.CapacityGB << " GB\n";
+
+        std::cout << "RPM : " << drive.RPM << '\n';
+
+        std::cout << "TRIM Supported : " << drive.TRIMSupported << '\n';
+        std::cout << "TRIM Enabled : " << drive.TRIMEnabled << '\n';
+        std::cout << "NCQ Supported : " << drive.NCQSupported << '\n';
+
+        std::cout << "Removable : " << drive.Removable << '\n';
+        std::cout << "Boot Drive : " << drive.BootDrive << '\n';
+        std::cout << "System Drive : " << drive.SystemDrive << '\n';
+
+        std::cout << "\n------ SMART ------\n";
+
+        const SMARTInfo &smart = drive.SMART;
+
+        std::cout << "Supported : " << smart.Supported << '\n';
+        std::cout << "Enabled : " << smart.Enabled << '\n';
+        std::cout << "Predict Failure : " << smart.PredictFailure << '\n';
+
+        std::cout << "Health : " << smart.HealthPercent << "%\n";
+
+        std::cout << "Temperature : " << smart.Temperature << " C\n";
+        std::cout << "Maximum Temperature : " << smart.MaxTemperature << " C\n";
+
+        std::cout << "Power On Hours : " << smart.PowerOnHours << '\n';
+        std::cout << "Power Cycles : " << smart.PowerCycles << '\n';
+
+        std::cout << "Estimated Age : " << smart.EstimatedAgeYears << " Years\n";
+        std::cout << "Estimated Remaining : " << smart.EstimatedRemainingYears << " Years\n";
+
+        std::cout << "Percentage Used : " << smart.PercentageUsed << '\n';
+        std::cout << "Percentage Remaining : " << smart.PercentageRemaining << '\n';
+
+        std::cout << "Available Spare : " << smart.AvailableSpare << '\n';
+        std::cout << "Spare Threshold : " << smart.SpareThreshold << '\n';
+
+        std::cout << "Unsafe Shutdowns : " << smart.UnsafeShutdowns << '\n';
+        std::cout << "Controller Busy Minutes : " << smart.ControllerBusyMinutes << '\n';
+
+        std::cout << "Host Reads : " << smart.HostReadsGB << " GB\n";
+        std::cout << "Host Writes : " << smart.HostWritesGB << " GB\n";
+
+        std::cout << "Data Read : " << smart.DataReadGB << " GB\n";
+        std::cout << "Data Written : " << smart.DataWrittenGB << " GB\n";
+
+        std::cout << "Media Errors : " << smart.MediaErrors << '\n';
+        std::cout << "Error Log Entries : " << smart.ErrorLogEntries << '\n';
+
+        std::cout << "Reallocated Sectors : " << smart.ReallocatedSectors << '\n';
+        std::cout << "Pending Sectors : " << smart.PendingSectors << '\n';
+        std::cout << "Uncorrectable Errors : " << smart.UncorrectableErrors << '\n';
+
+        std::cout << "CRC Errors : " << smart.CRCErrors << '\n';
+        std::cout << "Seek Error Rate : " << smart.SeekErrorRate << '\n';
+        std::cout << "Spin Retry Count : " << smart.SpinRetryCount << '\n';
+        std::cout << "Start Stop Count : " << smart.StartStopCount << '\n';
+        std::cout << "Load Unload Cycles : " << smart.LoadUnloadCycles << '\n';
+
+        for (size_t j = 0; j < drive.Partitions.size(); j++)
+        {
+            const PartitionInfo &part = drive.Partitions[j];
+
+            std::cout << "\n------ Partition " << j + 1 << " ------\n";
+
+            std::cout << "Drive Letter : " << part.DriveLetter << '\n';
+            std::cout << "Volume Name : " << part.VolumeName << '\n';
+            std::cout << "File System : " << part.FileSystem << '\n';
+
+            std::cout << "Partition Style : "
+          << PartitionStyleToString(part.Style)
+          << '\n';
+
+            std::cout << "Total : "
+                      << part.TotalBytes / (1024.0 * 1024 * 1024)
+                      << " GB\n";
+
+            std::cout << "Used : "
+                      << part.UsedBytes / (1024.0 * 1024 * 1024)
+                      << " GB\n";
+
+            std::cout << "Free : "
+                      << part.FreeBytes / (1024.0 * 1024 * 1024)
+                      << " GB\n";
+
+            std::cout << "Boot Partition : " << part.BootPartition << '\n';
+            std::cout << "System Partition : " << part.SystemPartition << '\n';
+            std::cout << "Hidden : " << part.Hidden << '\n';
+            std::cout << "BitLocker : " << part.BitLockerEncrypted << '\n';
+        }
     }
 }

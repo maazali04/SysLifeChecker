@@ -2,12 +2,75 @@
 #include "WMIHelper.hpp"
 #include <windows.h>
 #include <array>
+#include <algorithm>
+#include <winioctl.h>
 
 #include <nlohmann/json.hpp>
 
-
 using json = nlohmann::json;
 
+const char *PartitionStyleToString(PartitionStyle style)
+{
+    switch (style)
+    {
+    case PartitionStyle::MBR:
+        return "MBR";
+
+    case PartitionStyle::GPT:
+        return "GPT";
+
+    default:
+        return "Unknown";
+    }
+}
+
+const char *StorageDeviceTypeToString(StorageDeviceType type)
+{
+    switch (type)
+    {
+    case StorageDeviceType::HDD:
+        return "HDD";
+    case StorageDeviceType::SSD:
+        return "SSD";
+    case StorageDeviceType::NVMe:
+        return "NVMe";
+    case StorageDeviceType::SSHD:
+        return "SSHD";
+    case StorageDeviceType::USB:
+        return "USB";
+    case StorageDeviceType::SDCard:
+        return "SD Card";
+    case StorageDeviceType::Optical:
+        return "Optical";
+    default:
+        return "Unknown";
+    }
+}
+
+const char *StorageBusTypeToString(StorageBusType bus)
+{
+    switch (bus)
+    {
+    case StorageBusType::SATA:
+        return "SATA";
+    case StorageBusType::SAS:
+        return "SAS";
+    case StorageBusType::NVMe:
+        return "NVMe";
+    case StorageBusType::PCIe:
+        return "PCIe";
+    case StorageBusType::USB:
+        return "USB";
+    case StorageBusType::IDE:
+        return "IDE";
+    case StorageBusType::eMMC:
+        return "eMMC";
+    case StorageBusType::UFS:
+        return "UFS";
+    default:
+        return "Unknown";
+    }
+}
 
 static void FillOverallStorageInfo(StorageInfo &storage)
 {
@@ -95,12 +158,58 @@ static void FillPhysicalDriveInfo(StorageInfo &storage)
         StorageDevice drive;
 
         GetWMIProperty(pObject, L"Model", drive.Model);
-        GetWMIProperty(pObject, L"Manufacturer", drive.Manufacturer);
+        GetWMIProperty(
+            pObject,
+            L"Manufacturer",
+            drive.Manufacturer);
+
+        if (drive.Manufacturer.empty() ||
+            drive.Manufacturer == "(Standard disk drives)")
+        {
+            if (drive.Model.find("SAMSUNG") != std::string::npos)
+                drive.Manufacturer = "Samsung";
+
+            else if (drive.Model.find("WDC") != std::string::npos ||
+                     drive.Model.find("WD") != std::string::npos)
+                drive.Manufacturer = "Western Digital";
+
+            else if (drive.Model.find("Seagate") != std::string::npos ||
+                     drive.Model.find("ST") == 0)
+                drive.Manufacturer = "Seagate";
+
+            else if (drive.Model.find("TOSHIBA") != std::string::npos)
+                drive.Manufacturer = "Toshiba";
+
+            else if (drive.Model.find("KINGSTON") != std::string::npos)
+                drive.Manufacturer = "Kingston";
+
+            else if (drive.Model.find("CRUCIAL") != std::string::npos)
+                drive.Manufacturer = "Crucial";
+
+            else if (drive.Model.find("SanDisk") != std::string::npos)
+                drive.Manufacturer = "SanDisk";
+
+            else if (drive.Model.find("Intel") != std::string::npos)
+                drive.Manufacturer = "Intel";
+
+            else
+                drive.Manufacturer = "Unknown";
+        }
+
         GetWMIProperty(pObject, L"SerialNumber", drive.SerialNumber);
         GetWMIProperty(pObject, L"FirmwareRevision", drive.FirmwareVersion);
 
         GetWMIProperty(pObject, L"DeviceID", drive.DeviceID);
         GetWMIProperty(pObject, L"InterfaceType", drive.Interface);
+
+        if (drive.Protocol == "NVMe")
+        {
+            drive.Interface = "NVMe";
+        }
+        else if (drive.Protocol == "AHCI")
+        {
+            drive.Interface = "SATA";
+        }
 
         GetWMIProperty(pObject, L"Size", drive.CapacityBytes);
         // ---------- Bus / Connection ----------
@@ -122,22 +231,6 @@ static void FillPhysicalDriveInfo(StorageInfo &storage)
         GetWMIProperty(pObject,
                        L"BytesPerSector",
                        drive.BytesPerSector);
-
-        GetWMIProperty(pObject,
-                       L"TotalCylinders",
-                       drive.TotalCylinders);
-
-        GetWMIProperty(pObject,
-                       L"TotalHeads",
-                       drive.TotalHeads);
-
-        GetWMIProperty(pObject,
-                       L"SectorsPerTrack",
-                       drive.SectorsPerTrack);
-
-        GetWMIProperty(pObject,
-                       L"TracksPerCylinder",
-                       drive.TracksPerCylinder);
 
         // ---------- Status ----------
 
@@ -267,10 +360,78 @@ static void FillLogicalDriveInfo(StorageInfo &storage)
             if (partition.TotalBytes <= device.CapacityBytes)
             {
                 device.Partitions.push_back(partition);
+
+                if (device.DriveLetter.empty())
+                {
+                    device.DriveLetter = partition.DriveLetter;
+                }
+
+                if (partition.BootPartition)
+                {
+                    device.BootDrive = true;
+                }
+
+                if (partition.SystemPartition)
+                {
+                    device.SystemDrive = true;
+                }
                 break;
             }
         }
     }
+}
+
+static void FillPartitionStyle(StorageDevice &drive)
+{
+    HANDLE hDrive = CreateFileA(
+        drive.DeviceID.c_str(),
+        0,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        nullptr,
+        OPEN_EXISTING,
+        0,
+        nullptr);
+
+    if (hDrive == INVALID_HANDLE_VALUE)
+        return;
+
+    BYTE buffer[4096]{};
+    DWORD bytesReturned = 0;
+
+    if (DeviceIoControl(
+            hDrive,
+            IOCTL_DISK_GET_DRIVE_LAYOUT_EX,
+            nullptr,
+            0,
+            buffer,
+            sizeof(buffer),
+            &bytesReturned,
+            nullptr))
+    {
+        auto *layout =
+            reinterpret_cast<DRIVE_LAYOUT_INFORMATION_EX *>(buffer);
+
+        PartitionStyle style = PartitionStyle::Unknown;
+
+        if (layout->PartitionStyle == PARTITION_STYLE_GPT)
+        {
+            drive.GPT = true;
+            drive.MBR = false;
+            style = PartitionStyle::GPT;
+        }
+        else if (layout->PartitionStyle == PARTITION_STYLE_MBR)
+        {
+            drive.GPT = false;
+            drive.MBR = true;
+            style = PartitionStyle::MBR;
+        }
+        for (auto &partition : drive.Partitions)
+        {
+            partition.Style = style;
+        }
+    }
+
+    CloseHandle(hDrive);
 }
 
 static void FillPartitionInfo(StorageInfo &storage)
@@ -386,6 +547,7 @@ static void FillStorageFeatures(StorageInfo &storage)
 {
     for (auto &drive : storage.Drives)
     {
+        FillPartitionStyle(drive);
         HANDLE hDrive = CreateFileA(
             drive.DeviceID.c_str(),
             0,
@@ -423,21 +585,25 @@ static void FillStorageFeatures(StorageInfo &storage)
 
             switch (descriptor->BusType)
             {
-            case BusTypeAta:
-            case BusTypeSata:
-                drive.Bus = StorageBusType::SATA;
-                break;
-
             case BusTypeNvme:
                 drive.Bus = StorageBusType::NVMe;
+                drive.Protocol = "NVMe";
+                break;
+
+            case BusTypeSata:
+            case BusTypeAta:
+                drive.Bus = StorageBusType::SATA;
+                drive.Protocol = "AHCI";
                 break;
 
             case BusTypeUsb:
                 drive.Bus = StorageBusType::USB;
+                drive.Protocol = "USB";
                 break;
 
             case BusTypeScsi:
                 drive.Bus = StorageBusType::SAS;
+                drive.Protocol = "SCSI";
                 break;
 
             default:
@@ -450,7 +616,9 @@ static void FillStorageFeatures(StorageInfo &storage)
             if (descriptor->BusType == BusTypeNvme)
             {
                 drive.Type = StorageDeviceType::NVMe;
+
                 storage.NVMeCount++;
+                storage.SSDCount++;
             }
             else
             {
@@ -601,7 +769,9 @@ static void FillSMARTInfo(StorageInfo &storage)
         if (!ReadDriveSMART(
                 dev["name"].get<std::string>(),
                 smart))
+        {
             continue;
+        }
 
         std::string serial;
 
@@ -610,17 +780,39 @@ static void FillSMARTInfo(StorageInfo &storage)
 
         StorageDevice *drive = nullptr;
 
-        for (auto &d : storage.Drives)
+        // First try matching by serial number
+        if (!serial.empty())
         {
-            if (d.SerialNumber == serial)
+            for (auto &d : storage.Drives)
             {
-                drive = &d;
-                break;
+                if (d.SerialNumber == serial)
+                {
+                    drive = &d;
+                    break;
+                }
+            }
+        }
+
+        // If serial wasn't available, match by model
+        if (drive == nullptr && smart.contains("model_name"))
+        {
+            std::string model =
+                smart["model_name"].get<std::string>();
+
+            for (auto &d : storage.Drives)
+            {
+                if (d.Model == model)
+                {
+                    drive = &d;
+                    break;
+                }
             }
         }
 
         if (!drive)
             continue;
+        drive->SMART.Supported = true;
+        drive->SMART.Enabled = true;
 
         if (smart.contains("smart_status"))
         {
@@ -737,17 +929,26 @@ static void FillSMARTInfo(StorageInfo &storage)
             drive->SMART.PowerOnHours =
                 nvme.value("power_on_hours", 0ULL);
 
-            drive->SMART.HostReadsGB =
-                nvme.value("host_reads", 0ULL);
-
-            drive->SMART.HostWritesGB =
-                nvme.value("host_writes", 0ULL);
-
-            drive->SMART.DataReadGB =
+            uint64_t dataRead =
                 nvme.value("data_units_read", 0ULL);
 
-            drive->SMART.DataWrittenGB =
+            uint64_t dataWritten =
                 nvme.value("data_units_written", 0ULL);
+
+            // NVMe data units are 512,000 bytes each
+            drive->SMART.DataReadGB =
+                (dataRead * 512000ULL) / (1024ULL * 1024ULL * 1024ULL);
+
+            drive->SMART.DataWrittenGB =
+                (dataWritten * 512000ULL) / (1024ULL * 1024ULL * 1024ULL);
+
+            // Host reads/writes are controller-specific.
+            // Leave them as raw counts unless documented.
+            drive->SMART.HostReadsGB =
+                drive->SMART.DataReadGB;
+
+            drive->SMART.HostWritesGB =
+                drive->SMART.DataWrittenGB;
         }
         int health = 100;
         drive->SMART.EstimatedAgeYears =
@@ -758,16 +959,15 @@ static void FillSMARTInfo(StorageInfo &storage)
         if (drive->SMART.PercentageUsed > 0)
         {
             drive->SMART.EstimatedRemainingYears =
-                drive->SMART.EstimatedAgeYears *
-                (100.0 -
-                 drive->SMART.PercentageUsed) /
-                drive->SMART.PercentageUsed;
+                (drive->SMART.EstimatedAgeYears /
+                 drive->SMART.PercentageUsed) *
+                (100 - drive->SMART.PercentageUsed);
         }
 
         if (drive->Type == StorageDeviceType::NVMe ||
             drive->Type == StorageDeviceType::SSD)
         {
-            health -= drive->SMART.PercentageUsed;
+            health = 100 - drive->SMART.PercentageUsed;
 
             if (drive->SMART.MediaErrors > 0)
                 health -= 20;
@@ -777,17 +977,14 @@ static void FillSMARTInfo(StorageInfo &storage)
         }
         else
         {
-            health -=
-                static_cast<int>(
-                    drive->SMART.ReallocatedSectors);
+            if (drive->SMART.ReallocatedSectors > 0)
+                health -= 20;
 
-            health -=
-                static_cast<int>(
-                    drive->SMART.PendingSectors * 2);
+            if (drive->SMART.PendingSectors > 0)
+                health -= 30;
 
-            health -=
-                static_cast<int>(
-                    drive->SMART.UncorrectableErrors * 2);
+            if (drive->SMART.UncorrectableErrors > 0)
+                health -= 40;
 
             if (drive->SMART.PredictFailure)
                 health = 0;
@@ -796,9 +993,15 @@ static void FillSMARTInfo(StorageInfo &storage)
         health = std::clamp(health, 0, 100);
 
         drive->SMART.HealthPercent = health;
+        if (drive->SMART.HealthPercent < 0)
+            drive->SMART.HealthPercent = 0;
+
+        if (drive->SMART.HealthPercent > 100)
+            drive->SMART.HealthPercent = 100;
 
         drive->IsFailing =
-            drive->SMART.PredictFailure || health < 50;
+            drive->SMART.PredictFailure ||
+            drive->SMART.UncorrectableErrors > 0;
         if (drive->SMART.PredictFailure)
         {
             drive->HealthStatus = "Critical";
@@ -806,21 +1009,21 @@ static void FillSMARTInfo(StorageInfo &storage)
             drive->Recommendation =
                 "SMART predicts imminent drive failure. Replace immediately.";
         }
-        else if (health >= 90)
+        else if (health >= 80)
         {
             drive->HealthStatus = "Healthy";
 
             drive->Recommendation =
                 "Drive is operating normally.";
         }
-        else if (health >= 70)
+        else if (health >= 50)
         {
             drive->HealthStatus = "Good";
 
             drive->Recommendation =
-                "Drive is healthy but showing signs of normal wear.";
+                "Drive is healthy but showing normal wear.";
         }
-        else if (health >= 50)
+        else if (health >= 40)
         {
             drive->HealthStatus = "Warning";
 
@@ -844,7 +1047,7 @@ StorageInfo GetStorageInfo()
     FillOverallStorageInfo(storage);
     FillPhysicalDriveInfo(storage);
     FillLogicalDriveInfo(storage);
-    FillPartitionInfo(storage);
+    // FillPartitionInfo(storage);
     FillStorageFeatures(storage);
     FillSMARTInfo(storage);
     return storage;

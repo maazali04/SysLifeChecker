@@ -232,7 +232,7 @@ struct CPUInfo
 };
 
 // ------------------------------------
-// RAM
+// RAM 
 // ------------------------------------
 
 enum class RAMType
@@ -673,10 +673,6 @@ struct StorageDevice
     std::string HealthStatus;
     std::string Recommendation;
 
-    uint64_t TotalCylinders = 0;
-    uint32_t TotalHeads = 0;
-    uint32_t SectorsPerTrack = 0;
-    uint32_t TracksPerCylinder = 0;
 
     bool MediaLoaded = false;
     uint32_t LogicalSectorSize = 0;
