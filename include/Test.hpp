@@ -2,8 +2,8 @@
 
 #include "SystemInfo.hpp"
 
-void TestCPU(const CPUInfo& cpu);
-// void TestRAM(const RAMInfo& ram);
+// void TestCPU(const CPUInfo& cpu);
+void TestRAM(const RAMInfo& ram);
 // void TestStorage(const StorageInfo& storage);
 // void TestGPU(const std::vector<GPUInfo>& gpus);
 // void TestBattery(const BatteryInfo& battery);
