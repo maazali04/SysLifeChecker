@@ -59,3 +59,7 @@ Desktop.ini
 
 # macOS (if repository is ever opened on macOS)
 .DS_Store
+
+# hdd and sdd json files
+.hdd.json
+.nvme.json
