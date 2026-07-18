@@ -1,6 +1,7 @@
 #include "RAM.hpp"
 #include "Test.hpp"
 #include "Storage.hpp"
+#include "GPU.hpp"
 
 #include <iostream>
 
@@ -470,8 +471,8 @@ void TestStorage(const StorageInfo &storage)
             std::cout << "File System : " << part.FileSystem << '\n';
 
             std::cout << "Partition Style : "
-          << PartitionStyleToString(part.Style)
-          << '\n';
+                      << PartitionStyleToString(part.Style)
+                      << '\n';
 
             std::cout << "Total : "
                       << part.TotalBytes / (1024.0 * 1024 * 1024)
@@ -490,5 +491,245 @@ void TestStorage(const StorageInfo &storage)
             std::cout << "Hidden : " << part.Hidden << '\n';
             std::cout << "BitLocker : " << part.BitLockerEncrypted << '\n';
         }
+    }
+}
+
+void TestGPU(const std::vector<GPUInfo> &gpus)
+{
+    for (size_t index = 0; index < gpus.size(); index++)
+    {
+        const GPUInfo &gpu = gpus[index];
+
+        std::cout << "\n\n========================================\n";
+        std::cout << "GPU " << index + 1 << "\n";
+        std::cout << "========================================\n";
+
+        // Identity
+
+        std::cout << "---------- Identity ----------\n";
+
+        std::cout << "Name : "
+                  << gpu.Name << '\n';
+
+        std::cout << "Vendor : "
+                  << GPUVendorToString(gpu.Vendor)
+                  << '\n';
+
+        std::cout << "Type : "
+                  << GPUTypeToString(gpu.Type)
+                  << '\n';
+
+        std::cout << "Manufacturer : "
+                  << gpu.Manufacturer
+                  << '\n';
+
+        std::cout << "Codename : "
+                  << gpu.Codename
+                  << '\n';
+
+        std::cout << "Architecture : "
+                  << gpu.Architecture
+                  << '\n';
+
+        std::cout << "Device ID : "
+                  << gpu.DeviceID
+                  << '\n';
+
+        std::cout << "PCI Bus : "
+                  << gpu.PCIBus
+                  << '\n';
+
+        // Memory
+
+        std::cout
+            << "\n---------- Memory ----------\n";
+
+        std::cout << "VRAM Type : "
+                  << MemoryTypeToString(gpu.VRAMType)
+                  << '\n';
+
+        std::cout << "Dedicated VRAM : "
+                  << gpu.DedicatedVRAMGB
+                  << " GB\n";
+
+        std::cout << "Shared Memory : "
+                  << gpu.SharedMemoryGB
+                  << " GB\n";
+
+        std::cout << "Total Graphics Memory : "
+                  << gpu.TotalGraphicsMemoryGB
+                  << " GB\n";
+
+        // Specification
+
+        std::cout
+            << "\n---------- Specification ----------\n";
+
+        std::cout << "Base Clock : "
+                  << gpu.BaseClockMHz
+                  << " MHz\n";
+
+        std::cout << "Boost Clock : "
+                  << gpu.BoostClockMHz
+                  << " MHz\n";
+
+        std::cout << "Memory Bus Width : "
+                  << gpu.MemoryBusWidth
+                  << " bit\n";
+
+        std::cout << "Memory Bandwidth : "
+                  << gpu.MemoryBandwidthGBs
+                  << " GB/s\n";
+
+        std::cout << "DirectX : "
+                  << gpu.DirectXVersion
+                  << '\n';
+
+        std::cout << "Shader Model : "
+                  << gpu.ShaderModel
+                  << '\n';
+
+        std::cout << "OpenGL : "
+                  << gpu.OpenGLSupported
+                  << '\n';
+
+        std::cout << "Vulkan : "
+                  << gpu.VulkanSupported
+                  << '\n';
+
+        std::cout << "CUDA : "
+                  << gpu.CUDAAvailable
+                  << '\n';
+
+        std::cout << "OpenCL : "
+                  << gpu.OpenCLSupported
+                  << '\n';
+
+        // Driver
+
+        std::cout
+            << "\n---------- Driver ----------\n";
+
+        std::cout << "Driver Version : "
+                  << gpu.Driver.DriverVersion
+                  << '\n';
+
+        std::cout << "Driver Date : "
+                  << gpu.Driver.DriverDate
+                  << '\n';
+
+        std::cout << "Driver Provider : "
+                  << gpu.Driver.DriverProvider
+                  << '\n';
+
+        std::cout << "INF File : "
+                  << gpu.Driver.INFFile
+                  << '\n';
+
+        std::cout << "Driver Model : "
+                  << gpu.Driver.DriverModel
+                  << '\n';
+
+        std::cout << "WHQL Certified : "
+                  << gpu.Driver.WHQLCertified
+                  << '\n';
+
+        // Displays
+
+        std::cout
+            << "\n---------- Displays ----------\n";
+
+        for (size_t i = 0; i < gpu.Outputs.size(); i++)
+        {
+            auto &output = gpu.Outputs[i];
+
+            std::cout
+                << "\nOutput "
+                << i + 1
+                << '\n';
+
+            std::cout
+                << "Name : "
+                << output.Name
+                << '\n';
+
+            std::cout
+                << "Connection : "
+                << output.ConnectionType
+                << '\n';
+
+            std::cout
+                << "Connected : "
+                << output.Connected
+                << '\n';
+        }
+
+        // Runtime
+
+        std::cout
+            << "\n---------- Runtime ----------\n";
+
+        std::cout
+            << "GPU Usage : "
+            << gpu.Status.UsagePercent
+            << "%\n";
+
+        std::cout
+            << "Core Clock : "
+            << gpu.Status.CoreClockMHz
+            << " MHz\n";
+
+        std::cout
+            << "Memory Clock : "
+            << gpu.Status.MemoryClockMHz
+            << " MHz\n";
+
+        std::cout
+            << "Temperature : "
+            << gpu.Status.TemperatureC
+            << " C\n";
+
+        std::cout
+            << "Fan RPM : "
+            << gpu.Status.FanSpeedRPM
+            << '\n';
+
+        std::cout
+            << "Fan % : "
+            << gpu.Status.FanSpeedPercent
+            << "%\n";
+
+        std::cout
+            << "Power Usage : "
+            << gpu.Status.PowerUsageW
+            << " W\n";
+
+        std::cout
+            << "Thermal Throttling : "
+            << gpu.Status.ThermalThrottling
+            << '\n';
+
+        // Misc
+
+        std::cout
+            << "\n---------- Misc ----------\n";
+
+        std::cout
+            << "Primary GPU : "
+            << gpu.PrimaryGPU
+            << '\n';
+
+        std::cout
+            << "Hardware Acceleration : "
+            << gpu.HardwareAcceleration
+            << '\n';
+
+        std::cout
+            << "Resizable BAR : "
+            << gpu.ResizableBAR
+            << '\n';
+
+        std::cout
+            << "\n========================================\n";
     }
 }

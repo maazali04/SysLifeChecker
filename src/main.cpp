@@ -16,8 +16,8 @@ int main()
 
     // TestCPU(pc.CPU);
     // TestRAM(pc.RAM);
-    TestStorage(pc.Storage);
-    // TestGPU(pc.GPUs);
+    // TestStorage(pc.Storage);
+    TestGPU(pc.GPUs);
     // TestBattery(pc.Battery);
     // TestNetwork(pc.Network);
     // TestDisplay(pc.Displays);

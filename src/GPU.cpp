@@ -14,6 +14,89 @@
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"wbemuuid.lib")
 
+const char* GPUVendorToString(GPUVendor vendor)
+{
+    switch(vendor)
+    {
+        case GPUVendor::NVIDIA: return "NVIDIA";
+        case GPUVendor::AMD: return "AMD";
+        case GPUVendor::Intel: return "Intel";
+        case GPUVendor::Qualcomm: return "Qualcomm";
+        case GPUVendor::Apple: return "Apple";
+        case GPUVendor::ARM: return "ARM";
+        case GPUVendor::Microsoft: return "Microsoft";
+        case GPUVendor::VMware: return "VMware";
+        case GPUVendor::VirtualBox: return "VirtualBox";
+
+        default:
+            return "Unknown";
+    }
+}
+
+
+const char* GPUTypeToString(GPUType type)
+{
+    switch(type)
+    {
+        case GPUType::Integrated:
+            return "Integrated";
+
+        case GPUType::Dedicated:
+            return "Dedicated";
+
+        case GPUType::External:
+            return "External";
+
+        case GPUType::Virtual:
+            return "Virtual";
+
+        default:
+            return "Unknown";
+    }
+}
+
+
+const char* MemoryTypeToString(MemoryType type)
+{
+    switch(type)
+    {
+        case MemoryType::DDR3:
+            return "DDR3";
+
+        case MemoryType::DDR4:
+            return "DDR4";
+
+        case MemoryType::GDDR5:
+            return "GDDR5";
+
+        case MemoryType::GDDR5X:
+            return "GDDR5X";
+
+        case MemoryType::GDDR6:
+            return "GDDR6";
+
+        case MemoryType::GDDR6X:
+            return "GDDR6X";
+
+        case MemoryType::HBM:
+            return "HBM";
+
+        case MemoryType::HBM2:
+            return "HBM2";
+
+        case MemoryType::HBM2E:
+            return "HBM2E";
+
+        case MemoryType::HBM3:
+            return "HBM3";
+
+        default:
+            return "Unknown";
+    }
+}
+
+
+
 static GPUVendor GetVendor(const std::string& manufacturer)
 {
     if (manufacturer.find("NVIDIA") != std::string::npos)
@@ -288,8 +371,260 @@ static void FillVideoControllers(std::vector<GPUInfo>& gpus)
     locator->Release();
 }
 
+static void FillPhase1Info(std::vector<GPUInfo>& gpus)
+{
+    IWbemLocator* locator = nullptr;
+    IWbemServices* services = nullptr;
 
 
+    HRESULT hr = CoCreateInstance(
+        CLSID_WbemLocator,
+        nullptr,
+        CLSCTX_INPROC_SERVER,
+        IID_IWbemLocator,
+        (LPVOID*)&locator);
+
+
+    if(FAILED(hr))
+        return;
+
+
+    hr = locator->ConnectServer(
+        _bstr_t(L"ROOT\\CIMV2"),
+        nullptr,
+        nullptr,
+        nullptr,
+        0,
+        nullptr,
+        nullptr,
+        &services);
+
+
+    if(FAILED(hr))
+    {
+        locator->Release();
+        return;
+    }
+
+
+    CoSetProxyBlanket(
+        services,
+        RPC_C_AUTHN_WINNT,
+        RPC_C_AUTHZ_NONE,
+        nullptr,
+        RPC_C_AUTHN_LEVEL_CALL,
+        RPC_C_IMP_LEVEL_IMPERSONATE,
+        nullptr,
+        EOAC_NONE);
+
+
+
+    IEnumWbemClassObject* enumerator=nullptr;
+
+
+    services->ExecQuery(
+        bstr_t("WQL"),
+        bstr_t(
+        "SELECT * FROM Win32_PnPSignedDriver "
+        "WHERE DeviceClass='DISPLAY'"),
+        WBEM_FLAG_FORWARD_ONLY |
+        WBEM_FLAG_RETURN_IMMEDIATELY,
+        nullptr,
+        &enumerator);
+
+
+
+    IWbemClassObject* object=nullptr;
+    ULONG returned=0;
+
+
+    while(enumerator &&
+          enumerator->Next(
+              WBEM_INFINITE,
+              1,
+              &object,
+              &returned)==S_OK)
+    {
+
+        VARIANT value;
+        VariantInit(&value);
+
+
+        std::string description;
+
+
+        if(SUCCEEDED(object->Get(
+            L"Description",
+            0,
+            &value,
+            nullptr,
+            nullptr)))
+        {
+            if(value.vt==VT_BSTR)
+                description=_bstr_t(value.bstrVal);
+        }
+
+
+        VariantClear(&value);
+
+
+
+        for(auto& gpu:gpus)
+        {
+
+            if(description.find(gpu.Name)==std::string::npos &&
+               gpu.Name.find(description)==std::string::npos)
+                continue;
+
+
+
+            VariantInit(&value);
+
+
+            if(SUCCEEDED(object->Get(
+                L"DriverProviderName",
+                0,
+                &value,
+                nullptr,
+                nullptr)))
+            {
+                if(value.vt==VT_BSTR)
+                    gpu.Driver.DriverProvider =
+                    _bstr_t(value.bstrVal);
+            }
+
+
+            VariantClear(&value);
+
+
+
+            VariantInit(&value);
+
+
+            if(SUCCEEDED(object->Get(
+                L"InfName",
+                0,
+                &value,
+                nullptr,
+                nullptr)))
+            {
+                if(value.vt==VT_BSTR)
+                    gpu.Driver.INFFile =
+                    _bstr_t(value.bstrVal);
+            }
+
+
+            VariantClear(&value);
+
+
+
+            VariantInit(&value);
+
+
+            if(SUCCEEDED(object->Get(
+                L"DriverVersion",
+                0,
+                &value,
+                nullptr,
+                nullptr)))
+            {
+                if(value.vt==VT_BSTR)
+                    gpu.Driver.DriverVersion =
+                    _bstr_t(value.bstrVal);
+            }
+
+
+            VariantClear(&value);
+
+
+
+            VariantInit(&value);
+
+
+            if(SUCCEEDED(object->Get(
+                L"DriverDate",
+                0,
+                &value,
+                nullptr,
+                nullptr)))
+            {
+                if(value.vt==VT_BSTR)
+                    gpu.Driver.DriverDate =
+                    _bstr_t(value.bstrVal);
+            }
+
+
+            VariantClear(&value);
+
+
+
+            VariantInit(&value);
+
+
+            if(SUCCEEDED(object->Get(
+                L"IsSigned",
+                0,
+                &value,
+                nullptr,
+                nullptr)))
+            {
+                if(value.vt==VT_BOOL)
+                    gpu.Driver.WHQLCertified =
+                    value.boolVal==VARIANT_TRUE;
+            }
+
+
+            VariantClear(&value);
+
+
+
+            break;
+        }
+
+
+        object->Release();
+    }
+
+
+    if(enumerator)
+        enumerator->Release();
+
+
+    services->Release();
+    locator->Release();
+}
+
+static void DetectGPUType(std::vector<GPUInfo>& gpus)
+{
+    for(auto& gpu:gpus)
+    {
+        if(gpu.Vendor==GPUVendor::Microsoft ||
+           gpu.Vendor==GPUVendor::VMware ||
+           gpu.Vendor==GPUVendor::VirtualBox)
+        {
+            gpu.Type = GPUType::Virtual;
+            continue;
+        }
+
+
+        if(gpu.DedicatedVRAMBytes > 1024ULL*1024ULL*512ULL)
+        {
+            gpu.Type = GPUType::Dedicated;
+        }
+        else
+        {
+            gpu.Type = GPUType::Integrated;
+        }
+    }
+}
+static void FillDirectXInfo(std::vector<GPUInfo>& gpus)
+{
+    for(auto& gpu:gpus)
+    {
+        gpu.DirectXVersion = "12";
+        gpu.ShaderModel = "6.0";
+    }
+}
 
 static void FillDXGIInfo(std::vector<GPUInfo>& gpus)
 {
@@ -543,10 +878,21 @@ std::vector<GPUInfo> GetGPUInfo()
 {
     std::vector<GPUInfo> gpus;
 
+
     FillVideoControllers(gpus);
+
     FillDXGIInfo(gpus);
+
+    FillPhase1Info(gpus);
+
+    DetectGPUType(gpus);
+
+    FillDirectXInfo(gpus);
+
     FillDisplayOutputs(gpus);
+
     FillRuntimeInfo(gpus);
+
 
     return gpus;
 }
