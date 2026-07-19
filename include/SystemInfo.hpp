@@ -129,7 +129,6 @@ struct CPUFeatureInfo
 struct CPUStatusInfo
 {
     double UsagePercent = 0.0;
-
 };
 
 struct CPUInfo
@@ -166,9 +165,7 @@ struct CPUInfo
 
     int ProcessorType = 0;
 
-
     std::string ProcessorID;
-
 
     uint32_t InitialAPICID = 0;
 
@@ -227,12 +224,10 @@ struct CPUInfo
     // ---------- Runtime Status ----------
 
     CPUStatusInfo Status;
-
-
 };
 
 // ------------------------------------
-// RAM 
+// RAM
 // ------------------------------------
 
 enum class RAMType
@@ -410,20 +405,7 @@ enum class GPUType
     Virtual
 };
 
-enum class MemoryType
-{
-    Unknown,
-    DDR3,
-    DDR4,
-    GDDR5,
-    GDDR5X,
-    GDDR6,
-    GDDR6X,
-    HBM,
-    HBM2,
-    HBM2E,
-    HBM3
-};
+
 
 struct GPUDriverInfo
 {
@@ -435,7 +417,6 @@ struct GPUDriverInfo
 
     std::string INFFile;
 
-    std::string DriverModel; // WDDM 3.2
 
     bool WHQLCertified = false;
 };
@@ -443,25 +424,12 @@ struct GPUDriverInfo
 struct GPUDisplayOutput
 {
     std::string Name;
-    std::string ConnectionType; // HDMI, DP, USB-C, VGA...
     bool Connected = false;
 };
 
 struct GPUStatusInfo
 {
     double UsagePercent = 0.0;
-
-    double CoreClockMHz = 0.0;
-    double MemoryClockMHz = 0.0;
-
-    double TemperatureC = 0.0;
-
-    double FanSpeedRPM = 0.0;
-    double FanSpeedPercent = 0.0;
-
-    double PowerUsageW = 0.0;
-
-    bool ThermalThrottling = false;
 };
 
 struct GPUInfo
@@ -478,15 +446,11 @@ struct GPUInfo
 
     std::string Codename;
 
-    std::string Architecture;
-
     std::string DeviceID;
 
     std::string PCIBus;
 
     // ---------- Memory ----------
-
-    MemoryType VRAMType = MemoryType::Unknown;
 
     uint64_t DedicatedVRAMBytes = 0;
     double DedicatedVRAMGB = 0.0;
@@ -496,22 +460,6 @@ struct GPUInfo
 
     uint64_t TotalGraphicsMemoryBytes = 0;
     double TotalGraphicsMemoryGB = 0.0;
-
-    // ---------- Specifications ----------
-
-    double BaseClockMHz = 0.0;
-    double BoostClockMHz = 0.0;
-
-    double MemoryBusWidth = 0.0;
-    double MemoryBandwidthGBs = 0.0;
-
-    std::string DirectXVersion;
-    std::string ShaderModel;
-
-    bool OpenGLSupported = false;
-    bool VulkanSupported = false;
-    bool CUDAAvailable = false;
-    bool OpenCLSupported = false;
 
     // ---------- Driver ----------
 
@@ -524,19 +472,7 @@ struct GPUInfo
     // ---------- Runtime ----------
 
     GPUStatusInfo Status;
-    double DedicatedMemoryUsageGB = 0;
 
-    double SharedMemoryUsageGB = 0;
-
-    double GPUUtilizationPercent = 0;
-
-    // ---------- Misc ----------
-
-    bool PrimaryGPU = false;
-
-    bool HardwareAcceleration = false;
-
-    bool ResizableBAR = false;
 };
 
 // ------------------------------------
@@ -672,7 +608,6 @@ struct StorageDevice
     bool IsFailing = false;
     std::string HealthStatus;
     std::string Recommendation;
-
 
     bool MediaLoaded = false;
     uint32_t LogicalSectorSize = 0;

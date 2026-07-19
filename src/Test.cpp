@@ -527,26 +527,18 @@ void TestGPU(const std::vector<GPUInfo> &gpus)
                   << gpu.Codename
                   << '\n';
 
-        std::cout << "Architecture : "
-                  << gpu.Architecture
-                  << '\n';
+
 
         std::cout << "Device ID : "
                   << gpu.DeviceID
                   << '\n';
 
-        std::cout << "PCI Bus : "
-                  << gpu.PCIBus
-                  << '\n';
+
 
         // Memory
 
         std::cout
             << "\n---------- Memory ----------\n";
-
-        std::cout << "VRAM Type : "
-                  << MemoryTypeToString(gpu.VRAMType)
-                  << '\n';
 
         std::cout << "Dedicated VRAM : "
                   << gpu.DedicatedVRAMGB
@@ -560,50 +552,7 @@ void TestGPU(const std::vector<GPUInfo> &gpus)
                   << gpu.TotalGraphicsMemoryGB
                   << " GB\n";
 
-        // Specification
 
-        std::cout
-            << "\n---------- Specification ----------\n";
-
-        std::cout << "Base Clock : "
-                  << gpu.BaseClockMHz
-                  << " MHz\n";
-
-        std::cout << "Boost Clock : "
-                  << gpu.BoostClockMHz
-                  << " MHz\n";
-
-        std::cout << "Memory Bus Width : "
-                  << gpu.MemoryBusWidth
-                  << " bit\n";
-
-        std::cout << "Memory Bandwidth : "
-                  << gpu.MemoryBandwidthGBs
-                  << " GB/s\n";
-
-        std::cout << "DirectX : "
-                  << gpu.DirectXVersion
-                  << '\n';
-
-        std::cout << "Shader Model : "
-                  << gpu.ShaderModel
-                  << '\n';
-
-        std::cout << "OpenGL : "
-                  << gpu.OpenGLSupported
-                  << '\n';
-
-        std::cout << "Vulkan : "
-                  << gpu.VulkanSupported
-                  << '\n';
-
-        std::cout << "CUDA : "
-                  << gpu.CUDAAvailable
-                  << '\n';
-
-        std::cout << "OpenCL : "
-                  << gpu.OpenCLSupported
-                  << '\n';
 
         // Driver
 
@@ -626,9 +575,6 @@ void TestGPU(const std::vector<GPUInfo> &gpus)
                   << gpu.Driver.INFFile
                   << '\n';
 
-        std::cout << "Driver Model : "
-                  << gpu.Driver.DriverModel
-                  << '\n';
 
         std::cout << "WHQL Certified : "
                   << gpu.Driver.WHQLCertified
@@ -653,10 +599,6 @@ void TestGPU(const std::vector<GPUInfo> &gpus)
                 << output.Name
                 << '\n';
 
-            std::cout
-                << "Connection : "
-                << output.ConnectionType
-                << '\n';
 
             std::cout
                 << "Connected : "
@@ -674,60 +616,10 @@ void TestGPU(const std::vector<GPUInfo> &gpus)
             << gpu.Status.UsagePercent
             << "%\n";
 
-        std::cout
-            << "Core Clock : "
-            << gpu.Status.CoreClockMHz
-            << " MHz\n";
 
-        std::cout
-            << "Memory Clock : "
-            << gpu.Status.MemoryClockMHz
-            << " MHz\n";
 
-        std::cout
-            << "Temperature : "
-            << gpu.Status.TemperatureC
-            << " C\n";
 
-        std::cout
-            << "Fan RPM : "
-            << gpu.Status.FanSpeedRPM
-            << '\n';
 
-        std::cout
-            << "Fan % : "
-            << gpu.Status.FanSpeedPercent
-            << "%\n";
-
-        std::cout
-            << "Power Usage : "
-            << gpu.Status.PowerUsageW
-            << " W\n";
-
-        std::cout
-            << "Thermal Throttling : "
-            << gpu.Status.ThermalThrottling
-            << '\n';
-
-        // Misc
-
-        std::cout
-            << "\n---------- Misc ----------\n";
-
-        std::cout
-            << "Primary GPU : "
-            << gpu.PrimaryGPU
-            << '\n';
-
-        std::cout
-            << "Hardware Acceleration : "
-            << gpu.HardwareAcceleration
-            << '\n';
-
-        std::cout
-            << "Resizable BAR : "
-            << gpu.ResizableBAR
-            << '\n';
 
         std::cout
             << "\n========================================\n";

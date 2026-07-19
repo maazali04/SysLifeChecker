@@ -20,6 +20,7 @@ g++ *.cpp ^
 -liphlpapi ^
 -lwlanapi ^
 -lbthprops ^
+-lgdi32 ^
 -lwininet ^
 -o SysLifeChecker.exe
 

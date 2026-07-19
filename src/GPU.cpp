@@ -7,97 +7,65 @@
 
 #include <dxgi.h>
 
+
 #include <pdh.h>
 #include <pdhmsg.h>
 
-#pragma comment(lib,"pdh.lib")
+#pragma comment(lib, "pdh.lib")
 #pragma comment(lib,"dxgi.lib")
-#pragma comment(lib,"wbemuuid.lib")
+#pragma comment(lib,"opengl32.lib")
+#pragma comment(lib, "wbemuuid.lib")
 
-const char* GPUVendorToString(GPUVendor vendor)
+const char *GPUVendorToString(GPUVendor vendor)
 {
-    switch(vendor)
+    switch (vendor)
     {
-        case GPUVendor::NVIDIA: return "NVIDIA";
-        case GPUVendor::AMD: return "AMD";
-        case GPUVendor::Intel: return "Intel";
-        case GPUVendor::Qualcomm: return "Qualcomm";
-        case GPUVendor::Apple: return "Apple";
-        case GPUVendor::ARM: return "ARM";
-        case GPUVendor::Microsoft: return "Microsoft";
-        case GPUVendor::VMware: return "VMware";
-        case GPUVendor::VirtualBox: return "VirtualBox";
+    case GPUVendor::NVIDIA:
+        return "NVIDIA";
+    case GPUVendor::AMD:
+        return "AMD";
+    case GPUVendor::Intel:
+        return "Intel";
+    case GPUVendor::Qualcomm:
+        return "Qualcomm";
+    case GPUVendor::Apple:
+        return "Apple";
+    case GPUVendor::ARM:
+        return "ARM";
+    case GPUVendor::Microsoft:
+        return "Microsoft";
+    case GPUVendor::VMware:
+        return "VMware";
+    case GPUVendor::VirtualBox:
+        return "VirtualBox";
 
-        default:
-            return "Unknown";
+    default:
+        return "Unknown";
     }
 }
 
-
-const char* GPUTypeToString(GPUType type)
+const char *GPUTypeToString(GPUType type)
 {
-    switch(type)
+    switch (type)
     {
-        case GPUType::Integrated:
-            return "Integrated";
+    case GPUType::Integrated:
+        return "Integrated";
 
-        case GPUType::Dedicated:
-            return "Dedicated";
+    case GPUType::Dedicated:
+        return "Dedicated";
 
-        case GPUType::External:
-            return "External";
+    case GPUType::External:
+        return "External";
 
-        case GPUType::Virtual:
-            return "Virtual";
+    case GPUType::Virtual:
+        return "Virtual";
 
-        default:
-            return "Unknown";
+    default:
+        return "Unknown";
     }
 }
 
-
-const char* MemoryTypeToString(MemoryType type)
-{
-    switch(type)
-    {
-        case MemoryType::DDR3:
-            return "DDR3";
-
-        case MemoryType::DDR4:
-            return "DDR4";
-
-        case MemoryType::GDDR5:
-            return "GDDR5";
-
-        case MemoryType::GDDR5X:
-            return "GDDR5X";
-
-        case MemoryType::GDDR6:
-            return "GDDR6";
-
-        case MemoryType::GDDR6X:
-            return "GDDR6X";
-
-        case MemoryType::HBM:
-            return "HBM";
-
-        case MemoryType::HBM2:
-            return "HBM2";
-
-        case MemoryType::HBM2E:
-            return "HBM2E";
-
-        case MemoryType::HBM3:
-            return "HBM3";
-
-        default:
-            return "Unknown";
-    }
-}
-
-
-
-static GPUVendor GetVendor(const std::string& manufacturer)
+static GPUVendor GetVendor(const std::string &manufacturer)
 {
     if (manufacturer.find("NVIDIA") != std::string::npos)
         return GPUVendor::NVIDIA;
@@ -126,18 +94,17 @@ static GPUVendor GetVendor(const std::string& manufacturer)
     return GPUVendor::Unknown;
 }
 
-
-static void FillVideoControllers(std::vector<GPUInfo>& gpus)
+static void FillVideoControllers(std::vector<GPUInfo> &gpus)
 {
-    IWbemLocator* locator = nullptr;
-    IWbemServices* services = nullptr;
+    IWbemLocator *locator = nullptr;
+    IWbemServices *services = nullptr;
 
     HRESULT hr = CoCreateInstance(
         CLSID_WbemLocator,
         nullptr,
         CLSCTX_INPROC_SERVER,
         IID_IWbemLocator,
-        (LPVOID*)&locator);
+        (LPVOID *)&locator);
 
     if (FAILED(hr))
         return;
@@ -175,7 +142,7 @@ static void FillVideoControllers(std::vector<GPUInfo>& gpus)
         return;
     }
 
-    IEnumWbemClassObject* enumerator = nullptr;
+    IEnumWbemClassObject *enumerator = nullptr;
 
     hr = services->ExecQuery(
         bstr_t("WQL"),
@@ -191,7 +158,7 @@ static void FillVideoControllers(std::vector<GPUInfo>& gpus)
         return;
     }
 
-    IWbemClassObject* object = nullptr;
+    IWbemClassObject *object = nullptr;
     ULONG returned = 0;
 
     while (enumerator)
@@ -277,14 +244,14 @@ static void FillVideoControllers(std::vector<GPUInfo>& gpus)
         {
             if (value.vt == VT_BSTR)
             {
-                std::string date = (char*)_bstr_t(value.bstrVal);
+                std::string date = (char *)_bstr_t(value.bstrVal);
 
                 if (date.length() >= 8)
                 {
                     gpu.Driver.DriverDate =
-                        date.substr(0,4) + "-" +
-                        date.substr(4,2) + "-" +
-                        date.substr(6,2);
+                        date.substr(0, 4) + "-" +
+                        date.substr(4, 2) + "-" +
+                        date.substr(6, 2);
                 }
                 else
                 {
@@ -334,32 +301,8 @@ static void FillVideoControllers(std::vector<GPUInfo>& gpus)
         VariantClear(&value);
 
         // -------------------------------------------------
-        // PNP Device ID
-        // -------------------------------------------------
-
-        VariantInit(&value);
-
-        if (SUCCEEDED(object->Get(L"PNPDeviceID", 0, &value, nullptr, nullptr)))
-        {
-            if (value.vt == VT_BSTR)
-                gpu.PCIBus = _bstr_t(value.bstrVal);
-        }
-
-        VariantClear(&value);
-
-        // -------------------------------------------------
         // Primary GPU
-        // -------------------------------------------------
-
-        VariantInit(&value);
-
-        if (SUCCEEDED(object->Get(L"Primary", 0, &value, nullptr, nullptr)))
-        {
-            if (value.vt == VT_BOOL)
-                gpu.PrimaryGPU = (value.boolVal == VARIANT_TRUE);
-        }
-
-        VariantClear(&value);
+        // ------------------------------------------------
 
         gpus.push_back(gpu);
 
@@ -371,23 +314,20 @@ static void FillVideoControllers(std::vector<GPUInfo>& gpus)
     locator->Release();
 }
 
-static void FillPhase1Info(std::vector<GPUInfo>& gpus)
+static void FillPhase1Info(std::vector<GPUInfo> &gpus)
 {
-    IWbemLocator* locator = nullptr;
-    IWbemServices* services = nullptr;
-
+    IWbemLocator *locator = nullptr;
+    IWbemServices *services = nullptr;
 
     HRESULT hr = CoCreateInstance(
         CLSID_WbemLocator,
         nullptr,
         CLSCTX_INPROC_SERVER,
         IID_IWbemLocator,
-        (LPVOID*)&locator);
+        (LPVOID *)&locator);
 
-
-    if(FAILED(hr))
+    if (FAILED(hr))
         return;
-
 
     hr = locator->ConnectServer(
         _bstr_t(L"ROOT\\CIMV2"),
@@ -399,13 +339,11 @@ static void FillPhase1Info(std::vector<GPUInfo>& gpus)
         nullptr,
         &services);
 
-
-    if(FAILED(hr))
+    if (FAILED(hr))
     {
         locator->Release();
         return;
     }
-
 
     CoSetProxyBlanket(
         services,
@@ -417,197 +355,174 @@ static void FillPhase1Info(std::vector<GPUInfo>& gpus)
         nullptr,
         EOAC_NONE);
 
-
-
-    IEnumWbemClassObject* enumerator=nullptr;
-
+    IEnumWbemClassObject *enumerator = nullptr;
 
     services->ExecQuery(
         bstr_t("WQL"),
         bstr_t(
-        "SELECT * FROM Win32_PnPSignedDriver "
-        "WHERE DeviceClass='DISPLAY'"),
+            "SELECT * FROM Win32_PnPSignedDriver "
+            "WHERE DeviceClass='DISPLAY'"),
         WBEM_FLAG_FORWARD_ONLY |
-        WBEM_FLAG_RETURN_IMMEDIATELY,
+            WBEM_FLAG_RETURN_IMMEDIATELY,
         nullptr,
         &enumerator);
 
+    IWbemClassObject *object = nullptr;
+    ULONG returned = 0;
 
-
-    IWbemClassObject* object=nullptr;
-    ULONG returned=0;
-
-
-    while(enumerator &&
-          enumerator->Next(
-              WBEM_INFINITE,
-              1,
-              &object,
-              &returned)==S_OK)
+    while (enumerator &&
+           enumerator->Next(
+               WBEM_INFINITE,
+               1,
+               &object,
+               &returned) == S_OK)
     {
 
         VARIANT value;
         VariantInit(&value);
 
-
         std::string description;
 
-
-        if(SUCCEEDED(object->Get(
-            L"Description",
-            0,
-            &value,
-            nullptr,
-            nullptr)))
+        if (SUCCEEDED(object->Get(
+                L"Description",
+                0,
+                &value,
+                nullptr,
+                nullptr)))
         {
-            if(value.vt==VT_BSTR)
-                description=_bstr_t(value.bstrVal);
+            if (value.vt == VT_BSTR)
+                description = _bstr_t(value.bstrVal);
         }
-
 
         VariantClear(&value);
 
-
-
-        for(auto& gpu:gpus)
+        for (auto &gpu : gpus)
         {
 
-            if(description.find(gpu.Name)==std::string::npos &&
-               gpu.Name.find(description)==std::string::npos)
+            if (description.find(gpu.Name) == std::string::npos &&
+                gpu.Name.find(description) == std::string::npos)
                 continue;
 
-
-
             VariantInit(&value);
 
-
-            if(SUCCEEDED(object->Get(
-                L"DriverProviderName",
-                0,
-                &value,
-                nullptr,
-                nullptr)))
+            if (SUCCEEDED(object->Get(
+                    L"DriverProviderName",
+                    0,
+                    &value,
+                    nullptr,
+                    nullptr)))
             {
-                if(value.vt==VT_BSTR)
+                if (value.vt == VT_BSTR)
                     gpu.Driver.DriverProvider =
-                    _bstr_t(value.bstrVal);
+                        _bstr_t(value.bstrVal);
             }
-
 
             VariantClear(&value);
 
-
-
             VariantInit(&value);
 
-
-            if(SUCCEEDED(object->Get(
-                L"InfName",
-                0,
-                &value,
-                nullptr,
-                nullptr)))
+            if (SUCCEEDED(object->Get(
+                    L"InfName",
+                    0,
+                    &value,
+                    nullptr,
+                    nullptr)))
             {
-                if(value.vt==VT_BSTR)
+                if (value.vt == VT_BSTR)
                     gpu.Driver.INFFile =
-                    _bstr_t(value.bstrVal);
+                        _bstr_t(value.bstrVal);
             }
-
 
             VariantClear(&value);
 
-
-
             VariantInit(&value);
 
-
-            if(SUCCEEDED(object->Get(
-                L"DriverVersion",
-                0,
-                &value,
-                nullptr,
-                nullptr)))
+            if (SUCCEEDED(object->Get(
+                    L"DriverVersion",
+                    0,
+                    &value,
+                    nullptr,
+                    nullptr)))
             {
-                if(value.vt==VT_BSTR)
+                if (value.vt == VT_BSTR)
                     gpu.Driver.DriverVersion =
-                    _bstr_t(value.bstrVal);
+                        _bstr_t(value.bstrVal);
             }
-
 
             VariantClear(&value);
 
-
-
             VariantInit(&value);
 
-
-            if(SUCCEEDED(object->Get(
-                L"DriverDate",
-                0,
-                &value,
-                nullptr,
-                nullptr)))
+            if (SUCCEEDED(object->Get(
+                    L"DriverDate",
+                    0,
+                    &value,
+                    nullptr,
+                    nullptr)))
             {
-                if(value.vt==VT_BSTR)
-                    gpu.Driver.DriverDate =
-                    _bstr_t(value.bstrVal);
-            }
+                if (value.vt == VT_BSTR)
+                {
+                    std::string date =
+                        (char *)_bstr_t(value.bstrVal);
 
+                    if (date.length() >= 8)
+                    {
+                        gpu.Driver.DriverDate =
+                            date.substr(0, 4) + "-" +
+                            date.substr(4, 2) + "-" +
+                            date.substr(6, 2);
+                    }
+                    else
+                    {
+                        gpu.Driver.DriverDate = date;
+                    }
+                }
+            }
 
             VariantClear(&value);
 
-
-
             VariantInit(&value);
 
-
-            if(SUCCEEDED(object->Get(
-                L"IsSigned",
-                0,
-                &value,
-                nullptr,
-                nullptr)))
+            if (SUCCEEDED(object->Get(
+                    L"IsSigned",
+                    0,
+                    &value,
+                    nullptr,
+                    nullptr)))
             {
-                if(value.vt==VT_BOOL)
+                if (value.vt == VT_BOOL)
                     gpu.Driver.WHQLCertified =
-                    value.boolVal==VARIANT_TRUE;
+                        value.boolVal == VARIANT_TRUE;
             }
 
-
             VariantClear(&value);
-
-
 
             break;
         }
 
-
         object->Release();
     }
 
-
-    if(enumerator)
+    if (enumerator)
         enumerator->Release();
-
 
     services->Release();
     locator->Release();
 }
 
-static void DetectGPUType(std::vector<GPUInfo>& gpus)
+static void DetectGPUType(std::vector<GPUInfo> &gpus)
 {
-    for(auto& gpu:gpus)
+    for (auto &gpu : gpus)
     {
-        if(gpu.Vendor==GPUVendor::Microsoft ||
-           gpu.Vendor==GPUVendor::VMware ||
-           gpu.Vendor==GPUVendor::VirtualBox)
+        if (gpu.Vendor == GPUVendor::Microsoft ||
+            gpu.Vendor == GPUVendor::VMware ||
+            gpu.Vendor == GPUVendor::VirtualBox)
         {
             gpu.Type = GPUType::Virtual;
             continue;
         }
 
-
-        if(gpu.DedicatedVRAMBytes > 1024ULL*1024ULL*512ULL)
+        if (gpu.DedicatedVRAMBytes > 1024ULL * 1024ULL * 512ULL)
         {
             gpu.Type = GPUType::Dedicated;
         }
@@ -617,28 +532,20 @@ static void DetectGPUType(std::vector<GPUInfo>& gpus)
         }
     }
 }
-static void FillDirectXInfo(std::vector<GPUInfo>& gpus)
-{
-    for(auto& gpu:gpus)
-    {
-        gpu.DirectXVersion = "12";
-        gpu.ShaderModel = "6.0";
-    }
-}
 
-static void FillDXGIInfo(std::vector<GPUInfo>& gpus)
+static void FillDXGIInfo(std::vector<GPUInfo> &gpus)
 {
-    IDXGIFactory* factory = nullptr;
+    IDXGIFactory *factory = nullptr;
 
     if (FAILED(CreateDXGIFactory(
-        __uuidof(IDXGIFactory),
-        (void**)&factory)))
+            __uuidof(IDXGIFactory),
+            (void **)&factory)))
     {
         return;
     }
 
     UINT index = 0;
-    IDXGIAdapter* adapter = nullptr;
+    IDXGIAdapter *adapter = nullptr;
 
     while (factory->EnumAdapters(index, &adapter) != DXGI_ERROR_NOT_FOUND)
     {
@@ -654,7 +561,7 @@ static void FillDXGIInfo(std::vector<GPUInfo>& gpus)
         std::wstring ws(desc.Description);
         std::string name(ws.begin(), ws.end());
 
-        for (auto& gpu : gpus)
+        for (auto &gpu : gpus)
         {
             if (gpu.Name != name)
                 continue;
@@ -684,9 +591,6 @@ static void FillDXGIInfo(std::vector<GPUInfo>& gpus)
             gpu.DeviceID =
                 std::to_string(desc.DeviceId);
 
-            gpu.PCIBus =
-                std::to_string(desc.VendorId);
-
             if (desc.VendorId == 0x10DE)
                 gpu.Vendor = GPUVendor::NVIDIA;
 
@@ -705,23 +609,23 @@ static void FillDXGIInfo(std::vector<GPUInfo>& gpus)
 
     factory->Release();
 }
-static void FillDisplayOutputs(std::vector<GPUInfo>& gpus)
+static void FillDisplayOutputs(std::vector<GPUInfo> &gpus)
 {
-    IDXGIFactory* factory = nullptr;
+    IDXGIFactory *factory = nullptr;
 
     if (FAILED(CreateDXGIFactory(
-        __uuidof(IDXGIFactory),
-        (void**)&factory)))
+            __uuidof(IDXGIFactory),
+            (void **)&factory)))
     {
         return;
     }
 
     UINT adapterIndex = 0;
-    IDXGIAdapter* adapter = nullptr;
+    IDXGIAdapter *adapter = nullptr;
 
     while (factory->EnumAdapters(
-        adapterIndex,
-        &adapter) != DXGI_ERROR_NOT_FOUND)
+               adapterIndex,
+               &adapter) != DXGI_ERROR_NOT_FOUND)
     {
         DXGI_ADAPTER_DESC adapterDesc;
 
@@ -730,9 +634,9 @@ static void FillDisplayOutputs(std::vector<GPUInfo>& gpus)
         std::wstring ws(adapterDesc.Description);
         std::string adapterName(ws.begin(), ws.end());
 
-        GPUInfo* gpu = nullptr;
+        GPUInfo *gpu = nullptr;
 
-        for (auto& g : gpus)
+        for (auto &g : gpus)
         {
             if (g.Name == adapterName)
             {
@@ -744,11 +648,11 @@ static void FillDisplayOutputs(std::vector<GPUInfo>& gpus)
         if (gpu)
         {
             UINT outputIndex = 0;
-            IDXGIOutput* output = nullptr;
+            IDXGIOutput *output = nullptr;
 
             while (adapter->EnumOutputs(
-                outputIndex,
-                &output) != DXGI_ERROR_NOT_FOUND)
+                       outputIndex,
+                       &output) != DXGI_ERROR_NOT_FOUND)
             {
                 DXGI_OUTPUT_DESC desc;
 
@@ -765,9 +669,6 @@ static void FillDisplayOutputs(std::vector<GPUInfo>& gpus)
 
                 display.Connected =
                     desc.AttachedToDesktop;
-
-                display.ConnectionType =
-                    "Unknown";
 
                 gpu->Outputs.push_back(display);
 
@@ -821,7 +722,7 @@ static double GetTotalGPUUsage()
 
     std::vector<BYTE> buffer(bufferSize);
 
-    auto* items =
+    auto *items =
         reinterpret_cast<PPDH_FMT_COUNTERVALUE_ITEM>(
             buffer.data());
 
@@ -850,34 +751,19 @@ static double GetTotalGPUUsage()
 
     return total;
 }
-static void FillRuntimeInfo(std::vector<GPUInfo>& gpus)
+static void FillRuntimeInfo(std::vector<GPUInfo> &gpus)
 {
     double usage = GetTotalGPUUsage();
 
-    for (auto& gpu : gpus)
+    for (auto &gpu : gpus)
     {
         gpu.Status.UsagePercent = usage;
-
-        gpu.Status.CoreClockMHz = 0.0;
-        gpu.Status.MemoryClockMHz = 0.0;
-
-        gpu.Status.TemperatureC = 0.0;
-
-        gpu.Status.FanSpeedRPM = 0.0;
-        gpu.Status.FanSpeedPercent = 0.0;
-
-        gpu.Status.PowerUsageW = 0.0;
-
-        gpu.Status.ThermalThrottling = false;
-
-        gpu.HardwareAcceleration = true;
     }
 }
 
 std::vector<GPUInfo> GetGPUInfo()
 {
     std::vector<GPUInfo> gpus;
-
 
     FillVideoControllers(gpus);
 
@@ -887,12 +773,10 @@ std::vector<GPUInfo> GetGPUInfo()
 
     DetectGPUType(gpus);
 
-    FillDirectXInfo(gpus);
 
     FillDisplayOutputs(gpus);
 
     FillRuntimeInfo(gpus);
-
 
     return gpus;
 }
