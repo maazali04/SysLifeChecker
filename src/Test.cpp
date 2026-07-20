@@ -1578,4 +1578,4 @@ std::cout << "Release Date    : " << bios.ReleaseDate << '\n';
 std::cout << "Description     : " << bios.Description << '\n';
 std::cout << "Serial Number   : " << bios.SerialNumber << '\n';
 std::cout << "SMBIOS Version  : " << bios.SMBIOSVersion << '\n';
-}
+} 
