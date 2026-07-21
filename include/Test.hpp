@@ -7,8 +7,8 @@
 // void TestStorage(const StorageInfo& storage);
 // void TestGPU(const std::vector<GPUInfo>& gpus);
 // void TestBattery(const BatteryInfo& battery);
-void TestNetwork(const NetworkInfo& network);
-// void TestDisplay(const DisplaySystemInfo& displays);
+// void TestNetwork(const NetworkInfo& network);
+void TestDisplay(const DisplaySystemInfo& displays);
 // void TestWindows(const WindowsInfo& windows);
 // void TestSecurity(const SecurityInfo& security);
 // void TestPorts(const PortSystemInfo& ports);

@@ -4,6 +4,7 @@
 #include "GPU.hpp"
 #include "Battery.hpp"
 #include "Network.hpp"
+#include "Display.hpp"
 
 #include <iostream>
 
@@ -917,4 +918,143 @@ void TestNetwork(const NetworkInfo &network)
     }
 
     std::cout << "\n========================================\n";
+}
+
+void TestDisplay(const DisplaySystemInfo &system)
+{
+    std::cout << "\n========================================\n";
+    std::cout << "DISPLAY INFORMATION\n";
+    std::cout << "========================================\n";
+
+    std::cout << "Total Displays : "
+              << system.TotalDisplays << '\n';
+
+    std::cout << "Connected Displays : "
+              << system.ConnectedDisplays << "\n";
+
+    for (size_t i = 0; i < system.Displays.size(); i++)
+    {
+        const DisplayInfo &display = system.Displays[i];
+
+        std::cout << "\n========================================\n";
+        std::cout << "Display " << i + 1 << '\n';
+        std::cout << "========================================\n";
+
+        //-------------------------------
+        // Identity
+        //-------------------------------
+
+        std::cout << "---------- Identity ----------\n";
+
+        std::cout << "Name : " << display.Name << '\n';
+        if (!display.Manufacturer.empty())
+            std::cout << "Manufacturer : " << display.Manufacturer << '\n';
+
+        if (!display.SerialNumber.empty())
+            std::cout << "Serial Number : " << display.SerialNumber << '\n';
+        std::cout << "Model : " << display.Model << '\n';
+
+        //-------------------------------
+        // Hardware
+        //-------------------------------
+
+        std::cout << "\n---------- Hardware ----------\n";
+
+        std::cout << "Primary Display : "
+                  << (display.PrimaryDisplay ? "Yes" : "No")
+                  << '\n';
+
+        //-------------------------------
+        // Resolution
+        //-------------------------------
+
+        std::cout << "\n---------- Resolution ----------\n";
+
+        std::cout << "Current : "
+                  << display.CurrentResolution.Width
+                  << " x "
+                  << display.CurrentResolution.Height
+                  << '\n';
+
+        //-------------------------------
+        // Physical
+        //-------------------------------
+
+        std::cout << "\n---------- Physical ----------\n";
+
+        std::cout << "Orientation : "
+                  << (display.ScreenOrientation == Orientation::Landscape
+                          ? "Landscape"
+                          : "Portrait")
+                  << '\n';
+
+        //-------------------------------
+        // Timing
+        //-------------------------------
+
+        std::cout << "\n---------- Timing ----------\n";
+
+        std::cout << "Current Refresh Rate : "
+                  << display.Timing.CurrentRefreshRate
+                  << " Hz\n";
+
+        //-------------------------------
+        // Color
+        //-------------------------------
+
+        std::cout << "\n---------- Color ----------\n";
+
+        std::cout << "Bits Per Pixel : "
+                  << display.Color.BitsPerPixel
+                  << '\n';
+
+
+        std::cout << "HDR Supported : "
+                  << (display.Color.HDRSupported ? "Yes" : "No")
+                  << '\n';
+
+        std::cout << "HDR Enabled : "
+                  << (display.Color.HDREnabled ? "Yes" : "No")
+                  << '\n';
+
+        //-------------------------------
+        // Features
+        //-------------------------------
+
+        std::cout << "\n---------- Features ----------\n";
+
+        std::cout << "Touch Supported : "
+                  << (display.TouchSupported ? "Yes" : "No")
+                  << '\n';
+
+        std::cout << "Pen Supported : "
+                  << (display.PenSupported ? "Yes" : "No")
+                  << '\n';
+
+        std::cout << "Built-in Camera : "
+                  << (display.BuiltInCamera ? "Yes" : "No")
+                  << '\n';
+
+        std::cout << "Built-in Microphone : "
+                  << (display.BuiltInMicrophone ? "Yes" : "No")
+                  << '\n';
+
+        //-------------------------------
+        // Status
+        //-------------------------------
+
+        std::cout << "\n---------- Status ----------\n";
+
+        std::cout << "Connected : "
+                  << (display.Connected ? "Yes" : "No")
+                  << '\n';
+
+        std::cout << "Enabled : "
+                  << (display.Enabled ? "Yes" : "No")
+                  << '\n';
+
+        std::cout << "Sleeping : "
+                  << (display.Sleeping ? "Yes" : "No")
+                  << '\n';
+    }
 }

@@ -75,52 +75,7 @@ static void FillDisplayDevices(DisplaySystemInfo &displays)
 
             display.Enabled = true;
 
-            //----------------------------------
-            // Internal / External
-            //----------------------------------
 
-            std::string id = monitor.DeviceID;
-
-            display.InternalDisplay =
-                id.find("LCD") != std::string::npos ||
-                id.find("DISPLAY") != std::string::npos;
-
-            display.BuiltIn = display.InternalDisplay;
-
-            //----------------------------------
-            // Connection Type (Best Guess)
-            //----------------------------------
-
-            if (id.find("DISPLAYPORT") != std::string::npos)
-            {
-                display.Connection =
-                    DisplayConnection::DisplayPort;
-            }
-            else if (id.find("HDMI") != std::string::npos)
-            {
-                display.Connection =
-                    DisplayConnection::HDMI;
-            }
-            else if (id.find("DVI") != std::string::npos)
-            {
-                display.Connection =
-                    DisplayConnection::DVI;
-            }
-            else if (id.find("VGA") != std::string::npos)
-            {
-                display.Connection =
-                    DisplayConnection::VGA;
-            }
-            else if (display.InternalDisplay)
-            {
-                display.Connection =
-                    DisplayConnection::Internal;
-            }
-            else
-            {
-                display.Connection =
-                    DisplayConnection::Unknown;
-            }
 
             displays.Displays.push_back(display);
         }
@@ -173,11 +128,6 @@ static void FillDisplaySettings(DisplaySystemInfo &displays)
         display.Timing.CurrentRefreshRate =
             static_cast<double>(mode.dmDisplayFrequency);
 
-        display.Timing.MaximumRefreshRate =
-            display.Timing.CurrentRefreshRate;
-
-        display.Timing.MinimumRefreshRate =
-            display.Timing.CurrentRefreshRate;
 
         //----------------------------------
         // Color Depth
@@ -185,9 +135,6 @@ static void FillDisplaySettings(DisplaySystemInfo &displays)
 
         display.Color.BitsPerPixel =
             mode.dmBitsPerPel;
-
-        display.Color.BitsPerChannel =
-            mode.dmBitsPerPel / 3;
 
         //----------------------------------
         // Orientation
@@ -261,41 +208,7 @@ static void FillMonitorInfo(DisplaySystemInfo &displays)
             L"MaxVerticalImageSize",
             height);
 
-        display.WidthMM =
-            static_cast<uint32_t>(width) * 10;
 
-        display.HeightMM =
-            static_cast<uint32_t>(height) * 10;
-
-        //-----------------------------------------
-        // Screen Size
-        //-----------------------------------------
-
-        double w =
-            display.WidthMM / 25.4;
-
-        double h =
-            display.HeightMM / 25.4;
-
-        display.SizeInches =
-            std::sqrt(w * w + h * h);
-
-        //-----------------------------------------
-        // PPI
-        //-----------------------------------------
-
-        if (display.SizeInches > 0)
-        {
-            double pixels =
-                std::sqrt(
-                    display.CurrentResolution.Width *
-                        display.CurrentResolution.Width +
-                    display.CurrentResolution.Height *
-                        display.CurrentResolution.Height);
-
-            display.PPI =
-                pixels / display.SizeInches;
-        }
 
         object->Release();
 
@@ -428,16 +341,6 @@ static void FillBrightness(DisplaySystemInfo& displays)
         }
 
         DisplayInfo& display = displays.Displays[index];
-
-        uint32_t brightness = 0;
-
-        if (GetWMIProperty(
-                object,
-                L"CurrentBrightness",
-                brightness))
-        {
-            display.BrightnessPercent = brightness;
-        }
 
         object->Release();
 

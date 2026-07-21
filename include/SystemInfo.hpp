@@ -405,8 +405,6 @@ enum class GPUType
     Virtual
 };
 
-
-
 struct GPUDriverInfo
 {
     std::string DriverVersion;
@@ -416,7 +414,6 @@ struct GPUDriverInfo
     std::string DriverProvider;
 
     std::string INFFile;
-
 
     bool WHQLCertified = false;
 };
@@ -472,7 +469,6 @@ struct GPUInfo
     // ---------- Runtime ----------
 
     GPUStatusInfo Status;
-
 };
 
 // ------------------------------------
@@ -766,7 +762,6 @@ struct BatteryInfo
 
     int EstimatedChargeMinutes = 0;
 
-
     // ---------- Flags ----------
 
     bool Healthy = true;
@@ -775,24 +770,11 @@ struct BatteryInfo
 
     bool FastChargingSupported = false;
     bool FastChargingActive = false;
-
 };
 
 // ------------------------------------
 // Display Info
 // ------------------------------------
-enum class DisplayTechnology
-{
-    Unknown,
-    LCD,
-    LED,
-    IPS,
-    TN,
-    VA,
-    OLED,
-    MiniLED,
-    MicroLED
-};
 
 enum class DisplayConnection
 {
@@ -821,23 +803,14 @@ struct DisplayResolution
 struct DisplayColorInfo
 {
     uint32_t BitsPerPixel = 0;
-    uint32_t BitsPerChannel = 0;
 
     bool HDRSupported = false;
     bool HDREnabled = false;
-
-    bool WideColorGamut = false;
-
-    std::string ColorSpace;
 };
 
 struct DisplayTimingInfo
 {
     double CurrentRefreshRate = 0.0;
-    double MaximumRefreshRate = 0.0;
-    double MinimumRefreshRate = 0.0;
-
-    bool VariableRefreshRate = false;
 };
 
 struct DisplayInfo
@@ -851,26 +824,14 @@ struct DisplayInfo
 
     // ---------- Hardware ----------
 
-    DisplayTechnology Technology = DisplayTechnology::Unknown;
     DisplayConnection Connection = DisplayConnection::Unknown;
-
-    bool InternalDisplay = false;
     bool PrimaryDisplay = false;
-    bool BuiltIn = false;
 
     // ---------- Resolution ----------
 
-    DisplayResolution NativeResolution;
     DisplayResolution CurrentResolution;
 
     // ---------- Physical ----------
-
-    double SizeInches = 0.0;
-
-    uint32_t WidthMM = 0;
-    uint32_t HeightMM = 0;
-
-    double PPI = 0.0;
 
     Orientation ScreenOrientation = Orientation::Landscape;
 
@@ -887,10 +848,6 @@ struct DisplayInfo
     bool TouchSupported = false;
     bool PenSupported = false;
 
-    bool AdaptiveSync = false;
-    bool GSync = false;
-    bool FreeSync = false;
-
     bool BuiltInCamera = false;
     bool BuiltInMicrophone = false;
 
@@ -900,7 +857,6 @@ struct DisplayInfo
     bool Enabled = true;
     bool Sleeping = false;
 
-    uint32_t BrightnessPercent = 0;
 };
 
 struct DisplaySystemInfo
@@ -957,7 +913,6 @@ struct WiFiInfo
 
     uint32_t Channel = 0;
 
-
     int SignalStrength = 0; // %
 
     int RSSIdBm = 0;
@@ -993,7 +948,6 @@ struct NetworkStatistics
     uint64_t Errors = 0;
 
     uint64_t DroppedPackets = 0;
-
 };
 
 struct NetworkAdapter
