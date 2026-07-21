@@ -1249,13 +1249,11 @@ struct WindowsInfo
 
     WindowsEdition Edition = WindowsEdition::Unknown;
 
-    std::string Version;
 
     std::string Build;
 
     std::string DisplayVersion; // 23H2, 24H2...
 
-    std::string ReleaseID;
 
     // ---------- Installation ----------
 
@@ -1271,9 +1269,6 @@ struct WindowsInfo
 
     std::string CurrentUser;
 
-    std::string RegisteredOwner;
-
-    std::string Organization;
 
     // ---------- Architecture ----------
 

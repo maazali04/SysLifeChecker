@@ -5,6 +5,7 @@
 #include "Battery.hpp"
 #include "Network.hpp"
 #include "Display.hpp"
+#include "WindowsInfo.hpp"
 
 #include <iostream>
 
@@ -1057,4 +1058,112 @@ void TestDisplay(const DisplaySystemInfo &system)
                   << (display.Sleeping ? "Yes" : "No")
                   << '\n';
     }
+}
+
+void TestWindows(const WindowsInfo& windows)
+{
+    std::cout << "\n========================================\n";
+    std::cout << "WINDOWS INFORMATION\n";
+    std::cout << "========================================\n";
+
+    // ----------------------------------
+    // Identity
+    // ----------------------------------
+
+    std::cout << "\n---------- Identity ----------\n";
+
+    std::cout << "Product Name : "
+              << windows.ProductName << '\n';
+
+    std::cout << "Edition : "
+              << WindowsEditionToString(windows.Edition) << '\n';
+
+
+    std::cout << "Version : "
+              << windows.DisplayVersion << '\n';
+
+    std::cout << "Build : "
+              << windows.Build << '\n';
+
+
+
+    // ----------------------------------
+    // Installation
+    // ----------------------------------
+
+    std::cout << "\n---------- Installation ----------\n";
+
+    std::cout << "Install Date : "
+              << windows.InstallDate << '\n';
+
+    std::cout << "Boot Time : "
+              << windows.BootTime << '\n';
+
+    std::cout << "Uptime : "
+          << FormatUptime(windows.UptimeSeconds)
+          << '\n';
+
+    // ----------------------------------
+    // User
+    // ----------------------------------
+
+    std::cout << "\n---------- User ----------\n";
+
+    std::cout << "Computer Name : "
+              << windows.ComputerName << '\n';
+
+    std::cout << "Current User : "
+              << windows.CurrentUser << '\n';
+
+
+    // ----------------------------------
+    // Architecture
+    // ----------------------------------
+
+    std::cout << "\n---------- Architecture ----------\n";
+
+    std::cout << "64-bit Windows : "
+              << (windows.Is64Bit ? "Yes" : "No") << '\n';
+
+    std::cout << "Windows Directory : "
+              << windows.WindowsDirectory << '\n';
+
+    std::cout << "System Directory : "
+              << windows.SystemDirectory << '\n';
+
+    // ----------------------------------
+    // Status
+    // ----------------------------------
+
+    std::cout << "\n---------- Status ----------\n";
+
+    std::cout << "Safe Mode : "
+              << (windows.SafeMode ? "Yes" : "No") << '\n';
+
+    std::cout << "Fast Startup : "
+              << (windows.FastStartupEnabled ? "Enabled" : "Disabled") << '\n';
+
+    std::cout << "Hibernation : "
+              << (windows.HibernationEnabled ? "Enabled" : "Disabled") << '\n';
+
+    std::cout << "Remote Desktop : "
+              << (windows.RemoteDesktopEnabled ? "Enabled" : "Disabled") << '\n';
+
+    // ----------------------------------
+    // Activation
+    // ----------------------------------
+
+    std::cout << "\n---------- Activation ----------\n";
+
+    std::cout << "Activated : "
+              << (windows.Activation.Activated ? "Yes" : "No") << '\n';
+
+    std::cout << "License Status : "
+              << windows.Activation.LicenseStatus << '\n';
+
+    std::cout << "Product Key Channel : "
+              << windows.Activation.ProductKeyChannel << '\n';
+
+    std::cout << "Activation ID : "
+              << windows.Activation.ActivationID << '\n';
 }

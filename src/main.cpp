@@ -23,8 +23,8 @@ int main()
 //     TestBattery(battery);
 // }
     // TestNetwork(pc.Network);
-    TestDisplay(pc.Displays);
-    // TestWindows(pc.Windows);
+    // TestDisplay(pc.Displays);
+    TestWindows(pc.Windows);
     // TestSecurity(pc.Security);
     // TestPorts(pc.Ports);
     // TestAudio(pc.Audio);

@@ -8,8 +8,8 @@
 // void TestGPU(const std::vector<GPUInfo>& gpus);
 // void TestBattery(const BatteryInfo& battery);
 // void TestNetwork(const NetworkInfo& network);
-void TestDisplay(const DisplaySystemInfo& displays);
-// void TestWindows(const WindowsInfo& windows);
+// void TestDisplay(const DisplaySystemInfo& displays);
+void TestWindows(const WindowsInfo& windows);
 // void TestSecurity(const SecurityInfo& security);
 // void TestPorts(const PortSystemInfo& ports);
 // void TestAudio(const AudioInfo& audio);

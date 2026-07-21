@@ -10,7 +10,71 @@
 #include <stdint.h>
 #pragma comment(lib, "wbemuuid.lib")
 
-static WindowsEdition GetEdition(const std::string& edition)
+static std::string FormatWMIDate(const char* date)
+{
+    if (date == nullptr)
+        return "";
+
+    std::string str(date);
+
+    if (str.length() < 14)
+        return str;
+
+    return
+        str.substr(0, 4) + "-" +
+        str.substr(4, 2) + "-" +
+        str.substr(6, 2) + " " +
+        str.substr(8, 2) + ":" +
+        str.substr(10, 2) + ":" +
+        str.substr(12, 2);
+}
+
+const char *WindowsEditionToString(WindowsEdition edition)
+{
+    switch (edition)
+    {
+    case WindowsEdition::Home:
+        return "Home";
+
+    case WindowsEdition::HomeSingleLanguage:
+        return "Home Single Language";
+
+    case WindowsEdition::HomeN:
+        return "Home N";
+
+    case WindowsEdition::Pro:
+        return "Pro";
+
+    case WindowsEdition::ProN:
+        return "Pro N";
+
+    case WindowsEdition::ProEducation:
+        return "Pro Education";
+
+    case WindowsEdition::ProWorkstation:
+        return "Pro Workstation";
+
+    case WindowsEdition::Enterprise:
+        return "Enterprise";
+
+    case WindowsEdition::EnterpriseN:
+        return "Enterprise N";
+
+    case WindowsEdition::Education:
+        return "Education";
+
+    case WindowsEdition::IoT:
+        return "IoT";
+
+    case WindowsEdition::Server:
+        return "Server";
+
+    default:
+        return "Unknown";
+    }
+}
+
+static WindowsEdition GetEdition(const std::string &edition)
 {
     if (edition == "Professional")
         return WindowsEdition::Pro;
@@ -35,8 +99,8 @@ static WindowsEdition GetEdition(const std::string& edition)
 
 static std::string ReadRegistryString(
     HKEY root,
-    const std::string& subkey,
-    const std::string& value)
+    const std::string &subkey,
+    const std::string &value)
 {
     HKEY key;
 
@@ -71,9 +135,9 @@ static std::string ReadRegistryString(
     return buffer;
 }
 
-static void FillOSInfo(WindowsInfo& windows)
+static void FillOSInfo(WindowsInfo &windows)
 {
-    constexpr const char* path =
+    constexpr const char *path =
         "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
 
     windows.ProductName =
@@ -91,12 +155,6 @@ static void FillOSInfo(WindowsInfo& windows)
     windows.Edition =
         GetEdition(edition);
 
-    windows.Version =
-        ReadRegistryString(
-            HKEY_LOCAL_MACHINE,
-            path,
-            "CurrentVersion");
-
     windows.Build =
         ReadRegistryString(
             HKEY_LOCAL_MACHINE,
@@ -108,28 +166,50 @@ static void FillOSInfo(WindowsInfo& windows)
             HKEY_LOCAL_MACHINE,
             path,
             "DisplayVersion");
-
-    windows.ReleaseID =
-        ReadRegistryString(
-            HKEY_LOCAL_MACHINE,
-            path,
-            "ReleaseId");
 }
-static void FillInstallInfo(WindowsInfo& windows)
+
+std::string FormatUptime(uint64_t seconds)
 {
-    IWbemLocator* locator = nullptr;
+    uint64_t days = seconds / 86400;
+    seconds %= 86400;
+
+    uint64_t hours = seconds / 3600;
+    seconds %= 3600;
+
+    uint64_t minutes = seconds / 60;
+    seconds %= 60;
+
+    std::string result;
+
+    if (days)
+        result += std::to_string(days) + "d ";
+
+    if (hours)
+        result += std::to_string(hours) + "h ";
+
+    if (minutes)
+        result += std::to_string(minutes) + "m ";
+
+    result += std::to_string(seconds) + "s";
+
+    return result;
+}
+
+static void FillInstallInfo(WindowsInfo &windows)
+{
+    IWbemLocator *locator = nullptr;
 
     HRESULT hr = CoCreateInstance(
         CLSID_WbemLocator,
         nullptr,
         CLSCTX_INPROC_SERVER,
         IID_IWbemLocator,
-        (LPVOID*)&locator);
+        (LPVOID *)&locator);
 
     if (FAILED(hr))
         return;
 
-    IWbemServices* services = nullptr;
+    IWbemServices *services = nullptr;
 
     hr = locator->ConnectServer(
         _bstr_t(L"ROOT\\CIMV2"),
@@ -157,7 +237,7 @@ static void FillInstallInfo(WindowsInfo& windows)
         nullptr,
         EOAC_NONE);
 
-    IEnumWbemClassObject* enumerator = nullptr;
+    IEnumWbemClassObject *enumerator = nullptr;
 
     hr = services->ExecQuery(
         bstr_t("WQL"),
@@ -173,7 +253,7 @@ static void FillInstallInfo(WindowsInfo& windows)
         return;
     }
 
-    IWbemClassObject* object = nullptr;
+    IWbemClassObject *object = nullptr;
     ULONG returned = 0;
 
     if (enumerator->Next(
@@ -194,7 +274,7 @@ static void FillInstallInfo(WindowsInfo& windows)
         {
             if (value.vt == VT_BSTR)
                 windows.InstallDate =
-                    _bstr_t(value.bstrVal);
+    FormatWMIDate((const char*)_bstr_t(value.bstrVal));
 
             VariantClear(&value);
         }
@@ -208,7 +288,7 @@ static void FillInstallInfo(WindowsInfo& windows)
         {
             if (value.vt == VT_BSTR)
                 windows.BootTime =
-                    _bstr_t(value.bstrVal);
+    FormatWMIDate((const char*)_bstr_t(value.bstrVal));
 
             VariantClear(&value);
         }
@@ -227,7 +307,7 @@ static void FillInstallInfo(WindowsInfo& windows)
         static_cast<uint64_t>(ms / 1000);
 }
 
-static void FillUserInfo(WindowsInfo& windows)
+static void FillUserInfo(WindowsInfo &windows)
 {
     // ------------------------------
     // Computer Name
@@ -254,30 +334,9 @@ static void FillUserInfo(WindowsInfo& windows)
     {
         windows.CurrentUser = userName;
     }
-
-    // ------------------------------
-    // Registered Owner
-    // ------------------------------
-
-    windows.RegisteredOwner =
-        ReadRegistryString(
-            HKEY_LOCAL_MACHINE,
-            "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
-            "RegisteredOwner");
-
-    // ------------------------------
-    // Organization
-    // ------------------------------
-
-    windows.Organization =
-        ReadRegistryString(
-            HKEY_LOCAL_MACHINE,
-            "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
-            "RegisteredOrganization");
 }
 
-
-static void FillArchitectureInfo(WindowsInfo& windows)
+static void FillArchitectureInfo(WindowsInfo &windows)
 {
     // ------------------------------
     // Is 64-bit Windows
@@ -291,7 +350,7 @@ static void FillArchitectureInfo(WindowsInfo& windows)
 
     BOOL isWow64 = FALSE;
 
-    typedef BOOL(WINAPI *LPFN_ISWOW64PROCESS)(
+    typedef BOOL(WINAPI * LPFN_ISWOW64PROCESS)(
         HANDLE,
         PBOOL);
 
@@ -341,8 +400,8 @@ static void FillArchitectureInfo(WindowsInfo& windows)
 }
 static DWORD ReadRegistryDWORD(
     HKEY root,
-    const std::string& subkey,
-    const std::string& value)
+    const std::string &subkey,
+    const std::string &value)
 {
     HKEY key;
 
@@ -375,7 +434,7 @@ static DWORD ReadRegistryDWORD(
 
     return data;
 }
-static void FillStatusInfo(WindowsInfo& windows)
+static void FillStatusInfo(WindowsInfo &windows)
 {
     // ------------------------------
     // Safe Mode
@@ -415,9 +474,9 @@ static void FillStatusInfo(WindowsInfo& windows)
             "fDenyTSConnections") == 0;
 }
 
-static void FillActivationInfo(WindowsInfo& windows)
+static void FillActivationInfo(WindowsInfo &windows)
 {
-    IEnumWbemClassObject* enumerator = nullptr;
+    IEnumWbemClassObject *enumerator = nullptr;
 
     HRESULT hr = gService->ExecQuery(
         bstr_t("WQL"),
@@ -429,7 +488,7 @@ static void FillActivationInfo(WindowsInfo& windows)
     if (FAILED(hr))
         return;
 
-    IWbemClassObject* object = nullptr;
+    IWbemClassObject *object = nullptr;
     ULONG returned = 0;
 
     while (enumerator->Next(
