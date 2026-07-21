@@ -856,7 +856,6 @@ struct DisplayInfo
     bool Connected = true;
     bool Enabled = true;
     bool Sleeping = false;
-
 };
 
 struct DisplaySystemInfo
@@ -1249,11 +1248,9 @@ struct WindowsInfo
 
     WindowsEdition Edition = WindowsEdition::Unknown;
 
-
     std::string Build;
 
     std::string DisplayVersion; // 23H2, 24H2...
-
 
     // ---------- Installation ----------
 
@@ -1268,7 +1265,6 @@ struct WindowsInfo
     std::string ComputerName;
 
     std::string CurrentUser;
-
 
     // ---------- Architecture ----------
 
@@ -1322,7 +1318,6 @@ struct AntivirusInfo
     bool Enabled = false;
 
     bool UpToDate = false;
-
 };
 
 struct FirewallInfo
@@ -1412,140 +1407,6 @@ struct SecurityInfo
 };
 
 // ------------------------------------
-// USB
-// ------------------------------------
-enum class PortType
-{
-    Unknown,
-
-    USB2,
-    USB3,
-    USB31,
-    USB32,
-    USB4,
-
-    USBTypeA,
-    USBTypeC,
-
-    Thunderbolt3,
-    Thunderbolt4,
-    Thunderbolt5,
-
-    HDMI,
-    DisplayPort,
-    MiniDisplayPort,
-    VGA,
-    DVI,
-
-    Ethernet,
-
-    Audio35mm,
-    OpticalAudio,
-
-    SDCard,
-    MicroSD,
-
-    PS2,
-
-    Serial,
-    Parallel
-};
-
-enum class PortStatus
-{
-    Unknown,
-    Available,
-    Connected,
-    Disabled
-};
-
-struct USBDeviceInfo
-{
-    std::string Name;
-
-    std::string Manufacturer;
-
-    std::string SerialNumber;
-
-    std::string DeviceClass;
-
-    std::string DriverVersion;
-
-    bool SafelyRemovable = false;
-};
-
-struct PortInfo
-{
-    // ---------- Identity ----------
-
-    std::string Name;
-
-    PortType Type = PortType::Unknown;
-
-    PortStatus Status = PortStatus::Unknown;
-
-    // ---------- Hardware ----------
-
-    std::string Version; // USB 3.2 Gen2, HDMI 2.1...
-
-    uint32_t MaximumSpeedMbps = 0;
-
-    bool PowerDeliverySupported = false;
-
-    bool DisplayOutputSupported = false;
-
-    bool DataTransferSupported = true;
-
-    // ---------- Runtime ----------
-
-    bool Occupied = false;
-
-    USBDeviceInfo ConnectedDevice;
-};
-
-struct PortSystemInfo
-{
-    // ---------- USB ----------
-
-    uint32_t TotalUSBPorts = 0;
-
-    uint32_t USB2Ports = 0;
-
-    uint32_t USB3Ports = 0;
-
-    uint32_t USBCPorts = 0;
-
-    uint32_t ThunderboltPorts = 0;
-
-    // ---------- Video ----------
-
-    uint32_t HDMIPorts = 0;
-
-    uint32_t DisplayPorts = 0;
-
-    uint32_t VGAPorts = 0;
-
-    uint32_t DVIPorts = 0;
-
-    // ---------- Network ----------
-
-    uint32_t EthernetPorts = 0;
-
-    // ---------- Audio ----------
-
-    uint32_t AudioPorts = 0;
-
-    // ---------- Card Readers ----------
-
-    uint32_t SDCardSlots = 0;
-
-    uint32_t MicroSDSlots = 0;
-
-    // ---------- Complete List ----------
-
-    std::vector<PortInfo> Ports;
-};
-// ------------------------------------
 // AudioInfo
 // ------------------------------------
 enum class AudioDeviceType
@@ -1566,7 +1427,8 @@ struct AudioDevice
     std::string Name;
     std::string Manufacturer;
     std::string DriverVersion;
-    std::string DeviceID;
+    std::string EndpointID;
+    std::string InstanceID;
 
     AudioDeviceType Type = AudioDeviceType::Unknown;
 
@@ -1704,7 +1566,6 @@ struct SystemInfo
     MotherboardInfo Motherboard;
     WindowsInfo Windows;
     SecurityInfo Security;
-    PortSystemInfo Ports;
     AudioInfo Audio;
     CameraSystemInfo Cameras;
     DriverSystemInfo Drivers;
@@ -1723,7 +1584,6 @@ NetworkInfo GetNetworkInfo();
 MotherboardInfo GetMotherboardInfo();
 WindowsInfo GetWindowsInfo();
 SecurityInfo GetSecurityInfo();
-PortSystemInfo GetPortInfo();
 AudioInfo GetAudioInfo();
 CameraSystemInfo GetCameraInfo();
 DriverSystemInfo GetDriverInfo();

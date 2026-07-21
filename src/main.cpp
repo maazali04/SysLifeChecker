@@ -25,9 +25,8 @@ int main()
     // TestNetwork(pc.Network);
     // TestDisplay(pc.Displays);
     // TestWindows(pc.Windows);
-    TestSecurity(pc.Security);
-    // TestPorts(pc.Ports);
-    // TestAudio(pc.Audio);
+    // TestSecurity(pc.Security);
+    TestAudio(pc.Audio);
     // TestCamera(pc.Cameras);
     // TestDrivers(pc.Drivers);
     // TestCharger(pc.Chargers);

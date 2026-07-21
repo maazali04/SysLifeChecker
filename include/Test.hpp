@@ -10,9 +10,8 @@
 // void TestNetwork(const NetworkInfo& network);
 // void TestDisplay(const DisplaySystemInfo& displays);
 // void TestWindows(const WindowsInfo& windows);
-void TestSecurity(const SecurityInfo& security);
-// void TestPorts(const PortSystemInfo& ports);
-// void TestAudio(const AudioInfo& audio);
+// void TestSecurity(const SecurityInfo& security);
+void TestAudio(const AudioInfo& audio);
 // void TestCamera(const CameraSystemInfo& cameras);
 // void TestDrivers(const DriverSystemInfo& drivers);
 // void TestCharger(const std::vector<ChargerInfo>& chargers);

@@ -7,6 +7,7 @@
 #include "Display.hpp"
 #include "WindowsInfo.hpp"
 #include "Security.hpp"
+#include "Audio.hpp"
 
 #include <iostream>
 
@@ -1010,7 +1011,6 @@ void TestDisplay(const DisplaySystemInfo &system)
                   << display.Color.BitsPerPixel
                   << '\n';
 
-
         std::cout << "HDR Supported : "
                   << (display.Color.HDRSupported ? "Yes" : "No")
                   << '\n';
@@ -1061,7 +1061,7 @@ void TestDisplay(const DisplaySystemInfo &system)
     }
 }
 
-void TestWindows(const WindowsInfo& windows)
+void TestWindows(const WindowsInfo &windows)
 {
     std::cout << "\n========================================\n";
     std::cout << "WINDOWS INFORMATION\n";
@@ -1079,14 +1079,11 @@ void TestWindows(const WindowsInfo& windows)
     std::cout << "Edition : "
               << WindowsEditionToString(windows.Edition) << '\n';
 
-
     std::cout << "Version : "
               << windows.DisplayVersion << '\n';
 
     std::cout << "Build : "
               << windows.Build << '\n';
-
-
 
     // ----------------------------------
     // Installation
@@ -1101,8 +1098,8 @@ void TestWindows(const WindowsInfo& windows)
               << windows.BootTime << '\n';
 
     std::cout << "Uptime : "
-          << FormatUptime(windows.UptimeSeconds)
-          << '\n';
+              << FormatUptime(windows.UptimeSeconds)
+              << '\n';
 
     // ----------------------------------
     // User
@@ -1115,7 +1112,6 @@ void TestWindows(const WindowsInfo& windows)
 
     std::cout << "Current User : "
               << windows.CurrentUser << '\n';
-
 
     // ----------------------------------
     // Architecture
@@ -1169,7 +1165,7 @@ void TestWindows(const WindowsInfo& windows)
               << windows.Activation.ActivationID << '\n';
 }
 
-void TestSecurity(const SecurityInfo& security)
+void TestSecurity(const SecurityInfo &security)
 {
     std::cout << "\n========================================\n";
     std::cout << "SECURITY INFORMATION\n";
@@ -1226,13 +1222,11 @@ void TestSecurity(const SecurityInfo& security)
     std::cout << "Name : "
               << security.Defender.Name << '\n';
 
-
     std::cout << "Enabled : "
               << (security.Defender.Enabled ? "Yes" : "No") << '\n';
 
     std::cout << "Up To Date : "
               << (security.Defender.UpToDate ? "Yes" : "No") << '\n';
-
 
     //----------------------------------------
     // Other Antivirus
@@ -1240,22 +1234,22 @@ void TestSecurity(const SecurityInfo& security)
 
     std::cout << "\n---------- Other Antivirus ----------\n";
 
-if (security.InstalledAntivirus.empty())
-{
-    std::cout << "None Installed\n";
-}
-else
-{
-    for (size_t i = 0; i < security.InstalledAntivirus.size(); i++)
+    if (security.InstalledAntivirus.empty())
     {
-        const auto& antivirus = security.InstalledAntivirus[i];
-
-        std::cout << "\nAntivirus " << i + 1 << '\n';
-        std::cout << "Name : " << antivirus.Name << '\n';
-        std::cout << "Enabled : " << (antivirus.Enabled ? "Yes" : "No") << '\n';
-        std::cout << "Up To Date : " << (antivirus.UpToDate ? "Yes" : "No") << '\n';
+        std::cout << "None Installed\n";
     }
-}
+    else
+    {
+        for (size_t i = 0; i < security.InstalledAntivirus.size(); i++)
+        {
+            const auto &antivirus = security.InstalledAntivirus[i];
+
+            std::cout << "\nAntivirus " << i + 1 << '\n';
+            std::cout << "Name : " << antivirus.Name << '\n';
+            std::cout << "Enabled : " << (antivirus.Enabled ? "Yes" : "No") << '\n';
+            std::cout << "Up To Date : " << (antivirus.UpToDate ? "Yes" : "No") << '\n';
+        }
+    }
 
     //----------------------------------------
     // Firewall
@@ -1283,7 +1277,7 @@ else
     {
         std::cout << "\n---------- Drive Encryption ----------\n";
 
-        for (const auto& drive : security.EncryptedDrives)
+        for (const auto &drive : security.EncryptedDrives)
         {
             std::cout << "\nDrive : "
                       << drive.DriveLetter << '\n';
@@ -1309,11 +1303,8 @@ else
     std::cout << "Memory Integrity : "
               << (security.MemoryIntegrityEnabled ? "Enabled" : "Disabled") << '\n';
 
-
     std::cout << "User Account Control : "
               << (security.UserAccountControlEnabled ? "Enabled" : "Disabled") << '\n';
-
-
 
     //----------------------------------------
     // User Accounts
@@ -1325,7 +1316,7 @@ else
 
         for (size_t i = 0; i < security.Users.size(); i++)
         {
-            const auto& user = security.Users[i];
+            const auto &user = security.Users[i];
 
             std::cout << "\nUser "
                       << i + 1 << '\n';
@@ -1351,5 +1342,110 @@ else
             std::cout << "Locked : "
                       << (user.AccountLocked ? "Yes" : "No") << '\n';
         }
+    }
+}
+
+
+void TestAudio(const AudioInfo& audio)
+{
+    std::cout << "\n========================================\n";
+    std::cout << "AUDIO INFORMATION\n";
+    std::cout << "========================================\n\n";
+
+    std::cout << "Total Audio Devices : "
+              << audio.TotalDevices << "\n";
+
+    if (audio.Devices.empty())
+    {
+        std::cout << "\nNo audio devices detected.\n";
+        return;
+    }
+
+    for (size_t i = 0; i < audio.Devices.size(); i++)
+    {
+        const AudioDevice& device = audio.Devices[i];
+
+        std::cout << "\n----------------------------------------\n";
+        std::cout << "Device #" << i + 1 << "\n";
+        std::cout << "----------------------------------------\n";
+
+        std::cout << "Name             : "
+                  << device.Name << "\n";
+
+        std::cout << "Manufacturer     : "
+                  << device.Manufacturer << "\n";
+
+        std::cout << "Driver Version   : "
+                  << device.DriverVersion << "\n";
+
+        std::cout << "Type             : ";
+
+        switch (device.Type)
+        {
+        case AudioDeviceType::Speaker:
+            std::cout << "Speaker";
+            break;
+
+        case AudioDeviceType::Headphones:
+            std::cout << "Headphones";
+            break;
+
+        case AudioDeviceType::Microphone:
+            std::cout << "Microphone";
+            break;
+
+        case AudioDeviceType::Headset:
+            std::cout << "Headset";
+            break;
+
+        case AudioDeviceType::HDMIAudio:
+            std::cout << "HDMI Audio";
+            break;
+
+        case AudioDeviceType::BluetoothAudio:
+            std::cout << "Bluetooth Audio";
+            break;
+
+        case AudioDeviceType::USBAudio:
+            std::cout << "USB Audio";
+            break;
+
+        case AudioDeviceType::Virtual:
+            std::cout << "Virtual";
+            break;
+
+        default:
+            std::cout << "Unknown";
+            break;
+        }
+
+        std::cout << "\n";
+
+        std::cout << "Default Playback : "
+                  << (device.DefaultPlayback ? "Yes" : "No") << "\n";
+
+        std::cout << "Default Recording: "
+                  << (device.DefaultRecording ? "Yes" : "No") << "\n";
+
+        std::cout << "Enabled          : "
+                  << (device.Enabled ? "Yes" : "No") << "\n";
+
+        std::cout << "Connected        : "
+                  << (device.Connected ? "Yes" : "No") << "\n";
+
+        std::cout << "Channels         : "
+                  << device.Channels << "\n";
+
+        std::cout << "Sample Rate      : "
+                  << device.SampleRate << " Hz\n";
+
+        std::cout << "Bit Depth        : "
+                  << device.BitDepth << "-bit\n";
+
+        std::cout << "Volume           : "
+                  << device.VolumePercent << "%\n";
+
+        std::cout << "Muted            : "
+                  << (device.Muted ? "Yes" : "No") << "\n";
     }
 }

@@ -9,8 +9,7 @@
 #include "Network.hpp"   
 #include "Motherboard.hpp"
 #include "WindowsInfo.hpp" 
-#include "Security.hpp"  
-#include "Ports.hpp"     
+#include "Security.hpp"       
 #include "Audio.hpp"     
 #include "Camera.hpp"   
 #include "Drivers.hpp"   
@@ -29,7 +28,6 @@ SystemInfo GetSystemInfo()
     info.Motherboard = GetMotherboardInfo();
     info.Windows = GetWindowsInfo();
     info.Security = GetSecurityInfo();
-    info.Ports = GetPortInfo();
     info.Audio = GetAudioInfo();
     info.Cameras = GetCameraInfo();
     info.Drivers = GetDriverInfo();
