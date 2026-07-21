@@ -2,6 +2,7 @@
 #include "Test.hpp"
 #include "Storage.hpp"
 #include "GPU.hpp"
+#include "Battery.hpp"
 
 #include <iostream>
 
@@ -527,13 +528,9 @@ void TestGPU(const std::vector<GPUInfo> &gpus)
                   << gpu.Codename
                   << '\n';
 
-
-
         std::cout << "Device ID : "
                   << gpu.DeviceID
                   << '\n';
-
-
 
         // Memory
 
@@ -551,8 +548,6 @@ void TestGPU(const std::vector<GPUInfo> &gpus)
         std::cout << "Total Graphics Memory : "
                   << gpu.TotalGraphicsMemoryGB
                   << " GB\n";
-
-
 
         // Driver
 
@@ -574,7 +569,6 @@ void TestGPU(const std::vector<GPUInfo> &gpus)
         std::cout << "INF File : "
                   << gpu.Driver.INFFile
                   << '\n';
-
 
         std::cout << "WHQL Certified : "
                   << gpu.Driver.WHQLCertified
@@ -599,7 +593,6 @@ void TestGPU(const std::vector<GPUInfo> &gpus)
                 << output.Name
                 << '\n';
 
-
             std::cout
                 << "Connected : "
                 << output.Connected
@@ -616,12 +609,82 @@ void TestGPU(const std::vector<GPUInfo> &gpus)
             << gpu.Status.UsagePercent
             << "%\n";
 
-
-
-
-
-
         std::cout
             << "\n========================================\n";
     }
+}
+
+void TestBattery(const BatteryInfo &battery)
+{
+    std::cout << "\n========================================\n";
+    std::cout << "BATTERY INFORMATION\n";
+    std::cout << "========================================\n\n";
+
+    std::cout << "---------- Identity ----------\n";
+    std::cout << "Name : " << battery.Name << '\n';
+    std::cout << "Manufacturer : " << battery.Manufacturer << '\n';
+    std::cout << "Model : " << battery.Model << '\n';
+    std::cout << "Serial Number : " << battery.SerialNumber << '\n';
+    std::cout << "Device ID : " << battery.DeviceID << '\n';
+    std::cout << "Chemistry : " << BatteryChemistryToString(battery.Chemistry) << '\n';
+
+    std::cout << "\n---------- Capacity ----------\n";
+    std::cout << "Design Capacity : " << battery.DesignCapacitymWh << " mWh\n";
+    std::cout << "Full Charge Capacity : " << battery.FullChargeCapacitymWh << " mWh\n";
+    std::cout << "Remaining Capacity : " << battery.RemainingCapacitymWh << " mWh\n";
+    std::cout << "Remaining Percent : " << battery.RemainingCapacityPercent << "%\n";
+    std::cout << "Health : " << battery.HealthPercent << "%\n";
+
+    std::cout << "\n---------- Charging ----------\n";
+    std::cout << "Status : " << BatteryStatusToString(battery.Status) << '\n';
+    std::cout << "AC Connected : " << battery.ACConnected << '\n';
+    std::cout << "Charging : " << battery.IsCharging << '\n';
+    std::cout << "Battery Present : " << battery.IsBatteryPresent << '\n';
+    std::cout << "Charge Rate : " << battery.ChargeRatemW << " mW\n";
+    std::cout << "Discharge Rate : " << battery.DischargeRatemW << " mW\n";
+
+    std::cout << "\n---------- Life ----------\n";
+    std::cout << "Cycle Count : " << battery.CycleCount << '\n';
+    std::cout << "Design Voltage : " << battery.DesignedVoltagemV << " mV\n";
+    std::cout << "Current Voltage : " << battery.CurrentVoltagemV << " mV\n";
+
+    std::cout << "\n---------- Runtime ----------\n";
+    std::cout << "Remaining Time : " << battery.EstimatedRemainingMinutes << " min\n";
+    std::cout << "Charge Time : " << battery.EstimatedChargeMinutes << " min\n";
+
+    std::cout << "\n---------- Flags ----------\n";
+    std::cout << "Healthy : " << battery.Healthy << '\n';
+    std::cout << "Replace Recommended : " << battery.ReplaceRecommended << '\n';
+
+    std::cout << "Design Capacity : "
+              << battery.DesignCapacitymWh
+              << " mWh\n";
+
+    std::cout << "Full Charge Capacity : "
+              << battery.FullChargeCapacitymWh
+              << " mWh\n";
+
+    std::cout << "Cycle Count : "
+              << battery.CycleCount
+              << "\n";
+
+    std::cout << "Remaining Capacity : "
+              << battery.RemainingCapacitymWh
+              << " mWh\n";
+
+    std::cout << "Current Voltage : "
+              << battery.CurrentVoltagemV
+              << " mV\n";
+
+    std::cout << "Charge Rate : "
+              << battery.ChargeRatemW
+              << " mW\n";
+
+    std::cout << "Discharge Rate : "
+              << battery.DischargeRatemW
+              << " mW\n";
+
+    std::cout << "Status : "
+              << BatteryStatusToString(battery.Status)
+              << "\n";
 }

@@ -1,10 +1,325 @@
+
 #include "Battery.hpp"
 #include "WMIHelper.hpp"
-
 #include <windows.h>
 #include <powrprof.h>
+#include <setupapi.h>
+
+#include <batclass.h>
+#include <initguid.h>
+#include <devguid.h>
+#include <iostream>
+#include <memory> // Required for std::unique_ptr
+
+#include <winioctl.h>
 
 #pragma comment(lib, "PowrProf.lib")
+#pragma comment(lib, "Setupapi.lib")
+
+static HANDLE OpenBatteryDevice()
+{
+    HDEVINFO deviceInfo = SetupDiGetClassDevs(
+        &GUID_DEVICE_BATTERY,
+        nullptr,
+        nullptr,
+        DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
+
+    if (deviceInfo == INVALID_HANDLE_VALUE)
+        return INVALID_HANDLE_VALUE;
+
+    SP_DEVICE_INTERFACE_DATA interfaceData{};
+    interfaceData.cbSize = sizeof(interfaceData);
+
+    if (!SetupDiEnumDeviceInterfaces(deviceInfo, nullptr, &GUID_DEVICE_BATTERY, 0, &interfaceData))
+    {
+        SetupDiDestroyDeviceInfoList(deviceInfo);
+        return INVALID_HANDLE_VALUE;
+    }
+
+    DWORD detailSize = 0;
+    SetupDiGetDeviceInterfaceDetail(deviceInfo, &interfaceData, nullptr, 0, &detailSize, nullptr);
+
+    // Allocate memory dynamically as a byte array to fit the flexible structural size safely
+    auto buffer = std::make_unique<BYTE[]>(detailSize);
+
+    // Explicitly cast the raw buffer address to the Win32 detail data structure pointer
+    auto *detailData = reinterpret_cast<SP_DEVICE_INTERFACE_DETAIL_DATA *>(buffer.get());
+    detailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
+
+    if (!SetupDiGetDeviceInterfaceDetail(deviceInfo, &interfaceData, detailData, detailSize, nullptr, nullptr))
+    {
+        SetupDiDestroyDeviceInfoList(deviceInfo);
+        return INVALID_HANDLE_VALUE;
+    }
+
+    HANDLE hBattery = CreateFile(
+        detailData->DevicePath,
+        GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        nullptr,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        nullptr);
+
+    SetupDiDestroyDeviceInfoList(deviceInfo);
+    return hBattery;
+}
+
+static ULONG GetBatteryTag(HANDLE hBattery)
+{
+    ULONG batteryTag = 0;
+    DWORD bytesReturned = 0;
+
+    if (!DeviceIoControl(
+            hBattery,
+            IOCTL_BATTERY_QUERY_TAG,
+            &batteryTag,
+            sizeof(batteryTag),
+            &batteryTag,
+            sizeof(batteryTag),
+            &bytesReturned,
+            nullptr))
+    {
+        return 0;
+    }
+
+    return batteryTag;
+}
+static bool QueryBatteryInformation(
+    HANDLE hBattery,
+    ULONG batteryTag,
+    BATTERY_INFORMATION &info)
+{
+    BATTERY_QUERY_INFORMATION query{};
+    query.BatteryTag = batteryTag;
+    query.InformationLevel = BatteryInformation;
+
+    DWORD bytesReturned = 0;
+
+    return DeviceIoControl(
+        hBattery,
+        IOCTL_BATTERY_QUERY_INFORMATION,
+        &query,
+        sizeof(query),
+        &info,
+        sizeof(info),
+        &bytesReturned,
+        nullptr);
+}
+
+static bool QueryBatteryStatus(
+    HANDLE hBattery,
+    ULONG batteryTag,
+    BATTERY_STATUS &status)
+{
+    BATTERY_WAIT_STATUS waitStatus{};
+    waitStatus.BatteryTag = batteryTag;
+
+    DWORD bytesReturned = 0;
+
+    return DeviceIoControl(
+        hBattery,
+        IOCTL_BATTERY_QUERY_STATUS,
+        &waitStatus,
+        sizeof(waitStatus),
+        &status,
+        sizeof(status),
+        &bytesReturned,
+        nullptr);
+}
+
+static void FillBatteryAPIInformation(
+    HANDLE hBattery,
+    std::vector<BatteryInfo> &batteries)
+{
+    if (batteries.empty())
+        return;
+
+    ULONG tag = GetBatteryTag(hBattery);
+
+    if (tag == 0)
+        return;
+
+    BATTERY_INFORMATION info{};
+
+    if (!QueryBatteryInformation(hBattery, tag, info))
+        return;
+        
+
+    BatteryInfo &battery = batteries.front();
+
+    battery.DesignCapacitymWh = info.DesignedCapacity;
+
+    battery.FullChargeCapacitymWh = info.FullChargedCapacity;
+
+    battery.CycleCount = info.CycleCount;
+
+    if (memcmp(info.Chemistry, "LION", 4) == 0)
+    {
+        battery.Chemistry = BatteryChemistry::LiIon;
+    }
+    else if (memcmp(info.Chemistry, "LIPO", 4) == 0)
+    {
+        battery.Chemistry = BatteryChemistry::LiPolymer;
+    }
+    else if (memcmp(info.Chemistry, "NICD", 4) == 0)
+    {
+        battery.Chemistry = BatteryChemistry::NiCd;
+    }
+    else if (memcmp(info.Chemistry, "NIMH", 4) == 0)
+    {
+        battery.Chemistry = BatteryChemistry::NiMH;
+    }
+    else if (memcmp(info.Chemistry, "PBAC", 4) == 0)
+    {
+        battery.Chemistry = BatteryChemistry::LeadAcid;
+    }
+    else
+    {
+        battery.Chemistry = BatteryChemistry::Unknown;
+    }
+
+    BATTERY_STATUS status{};
+
+if (QueryBatteryStatus(hBattery, tag, status))
+{
+    battery.RemainingCapacitymWh =
+        status.Capacity;
+
+    battery.CurrentVoltagemV =
+        status.Voltage;
+
+    LONG rate = status.Rate;
+
+    if (rate > 0)
+    {
+        battery.ChargeRatemW = rate;
+        battery.DischargeRatemW = 0;
+    }
+    else
+    {
+        battery.DischargeRatemW = -rate;
+        battery.ChargeRatemW = 0;
+    }
+
+    if (status.PowerState & BATTERY_CHARGING)
+    {
+        battery.IsCharging = true;
+        battery.Status = BatteryStatus::Charging;
+    }
+    else if (status.PowerState & BATTERY_DISCHARGING)
+    {
+        battery.IsCharging = false;
+        battery.Status = BatteryStatus::Discharging;
+    }
+    else if (status.PowerState & BATTERY_POWER_ON_LINE)
+    {
+        battery.Status = BatteryStatus::FullyCharged;
+    }
+}
+// Design Capacity
+battery.DesignCapacitymWh =
+    info.DesignedCapacity;
+
+// Full Charge Capacity
+battery.FullChargeCapacitymWh =
+    info.FullChargedCapacity;
+
+// Cycle Count
+battery.CycleCount =
+    info.CycleCount;
+    if (battery.DesignCapacitymWh > 0)
+{
+    battery.HealthPercent =
+        battery.FullChargeCapacitymWh *
+        100.0 /
+        battery.DesignCapacitymWh;
+}
+else
+{
+    battery.HealthPercent = 0.0;
+}
+battery.Healthy =
+    battery.HealthPercent >= 80.0;
+    battery.ReplaceRecommended =
+(
+    battery.HealthPercent < 60.0 ||
+    battery.CycleCount > 800
+);
+if (battery.DesignCapacitymWh)
+{
+    battery.RemainingCapacityPercent =
+        static_cast<uint64_t>(
+            battery.RemainingCapacitymWh *
+            100 /
+            battery.FullChargeCapacitymWh);
+}
+if (battery.DischargeRatemW > 0)
+{
+    battery.EstimatedRemainingMinutes =
+        static_cast<int>(
+            battery.RemainingCapacitymWh
+            * 60
+            / battery.DischargeRatemW);
+}
+if (battery.ChargeRatemW > 0)
+{
+    battery.EstimatedChargeMinutes =
+        static_cast<int>(
+            (battery.FullChargeCapacitymWh -
+             battery.RemainingCapacitymWh)
+            * 60
+            / battery.ChargeRatemW);
+}
+battery.FastChargingSupported = false;
+battery.FastChargingActive = false;
+
+if (battery.ChargeRatemW >= 30000)
+{
+    battery.FastChargingSupported = true;
+    battery.FastChargingActive = battery.IsCharging;
+}
+}
+
+const char *BatteryChemistryToString(BatteryChemistry chemistry)
+{
+    switch (chemistry)
+    {
+    case BatteryChemistry::LiIon:
+        return "Li-Ion";
+    case BatteryChemistry::LiPolymer:
+        return "Li-Polymer";
+    case BatteryChemistry::NiMH:
+        return "NiMH";
+    case BatteryChemistry::NiCd:
+        return "NiCd";
+    case BatteryChemistry::LeadAcid:
+        return "Lead Acid";
+    default:
+        return "Unknown";
+    }
+}
+
+const char *BatteryStatusToString(BatteryStatus status)
+{
+    switch (status)
+    {
+    case BatteryStatus::Charging:
+        return "Charging";
+    case BatteryStatus::Discharging:
+        return "Discharging";
+    case BatteryStatus::FullyCharged:
+        return "Fully Charged";
+    case BatteryStatus::NotCharging:
+        return "Not Charging";
+    case BatteryStatus::ACConnected:
+        return "AC Connected";
+    case BatteryStatus::Critical:
+        return "Critical";
+    default:
+        return "Unknown";
+    }
+}
 
 static void FillBatteryIdentity(std::vector<BatteryInfo> &batteries)
 {
@@ -164,12 +479,22 @@ static void FillBatteryHealth(std::vector<BatteryInfo> &batteries)
 
 std::vector<BatteryInfo> GetBatteryInfo()
 {
+
     std::vector<BatteryInfo> batteries;
 
     FillBatteryIdentity(batteries);
 
     if (batteries.empty())
         return batteries;
+
+    HANDLE hBattery = OpenBatteryDevice();
+
+    if (hBattery == INVALID_HANDLE_VALUE)
+        return batteries;
+
+    FillBatteryAPIInformation(hBattery, batteries);
+
+    CloseHandle(hBattery);
 
     FillBatteryStatus(batteries);
     FillBatteryHealth(batteries);

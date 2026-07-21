@@ -766,15 +766,6 @@ struct BatteryInfo
 
     int EstimatedChargeMinutes = 0;
 
-    // ---------- Temperature ----------
-
-    double TemperatureC = 0.0;
-
-    // ---------- Manufacturing ----------
-
-    std::string ManufactureDate;
-
-    std::string FirstUseDate;
 
     // ---------- Flags ----------
 
@@ -783,8 +774,8 @@ struct BatteryInfo
     bool ReplaceRecommended = false;
 
     bool FastChargingSupported = false;
-
     bool FastChargingActive = false;
+
 };
 
 // ------------------------------------

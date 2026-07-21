@@ -22,7 +22,10 @@ g++ *.cpp ^
 -lbthprops ^
 -lgdi32 ^
 -lwininet ^
+-lhid ^
+-luuid ^
 -o SysLifeChecker.exe
+
 
 :: Check if the compilation succeeded before running
 if %errorlevel% equ 0 (
