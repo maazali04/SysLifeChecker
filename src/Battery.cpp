@@ -5,13 +5,13 @@
 #include <powrprof.h>
 #include <setupapi.h>
 
-#include <batclass.h>
-#include <initguid.h>
-#include <devguid.h>
 #include <iostream>
 #include <memory> // Required for std::unique_ptr
 
 #include <winioctl.h>
+#include <initguid.h>
+#include <batclass.h>
+#include <devguid.h>
 
 #pragma comment(lib, "PowrProf.lib")
 #pragma comment(lib, "Setupapi.lib")

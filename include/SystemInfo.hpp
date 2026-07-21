@@ -945,7 +945,6 @@ struct IPv4Address
 struct IPv6Address
 {
     std::string Address;
-    uint32_t PrefixLength = 0;
     std::string Gateway;
 };
 
@@ -958,7 +957,6 @@ struct WiFiInfo
 
     uint32_t Channel = 0;
 
-    uint32_t ChannelWidthMHz = 0;
 
     int SignalStrength = 0; // %
 
@@ -996,9 +994,6 @@ struct NetworkStatistics
 
     uint64_t DroppedPackets = 0;
 
-    double UploadSpeedMbps = 0.0;
-
-    double DownloadSpeedMbps = 0.0;
 };
 
 struct NetworkAdapter
@@ -1032,10 +1027,6 @@ struct NetworkAdapter
     bool Enabled = true;
 
     // ---------- Link ----------
-
-    uint64_t LinkSpeedMbps = 0;
-
-    uint64_t MaxLinkSpeedMbps = 0;
 
     bool DHCPEnabled = false;
 

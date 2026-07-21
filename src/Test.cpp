@@ -3,6 +3,7 @@
 #include "Storage.hpp"
 #include "GPU.hpp"
 #include "Battery.hpp"
+#include "Network.hpp"
 
 #include <iostream>
 
@@ -687,4 +688,233 @@ void TestBattery(const BatteryInfo &battery)
     std::cout << "Status : "
               << BatteryStatusToString(battery.Status)
               << "\n";
+}
+
+void TestNetwork(const NetworkInfo &network)
+{
+    std::cout << "\n========================================\n";
+    std::cout << "NETWORK INFORMATION\n";
+    std::cout << "========================================\n";
+
+    std::cout << "Total Adapters : "
+              << network.TotalAdapters << '\n';
+
+    std::cout << "Connected Adapters : "
+              << network.ConnectedAdapters << '\n';
+
+    std::cout << "Internet Available : "
+              << network.InternetAvailable << "\n";
+
+    for (size_t i = 0; i < network.Adapters.size(); i++)
+    {
+        const auto &adapter = network.Adapters[i];
+        if (!adapter.PhysicalAdapter)
+            continue;
+
+        std::cout << "\n========================================\n";
+        std::cout << "Adapter " << i + 1 << '\n';
+        std::cout << "========================================\n";
+
+        // ----------------------------------------------------
+        // Identity
+        // ----------------------------------------------------
+
+        std::cout << "---------- Identity ----------\n";
+
+        std::cout << "Name : "
+                  << adapter.Name << '\n';
+
+        std::cout << "Description : "
+                  << adapter.Description << '\n';
+
+        std::cout << "Manufacturer : "
+                  << adapter.Manufacturer << '\n';
+
+        std::cout << "Model : "
+                  << adapter.Model << '\n';
+
+        std::cout << "Driver Version : "
+                  << adapter.DriverVersion << '\n';
+
+        std::cout << "Driver Date : "
+                  << adapter.DriverDate << '\n';
+
+        std::cout << "MAC Address : "
+                  << adapter.MACAddress << '\n';
+
+        std::cout << "Device ID : "
+                  << adapter.DeviceID << '\n';
+
+        // ----------------------------------------------------
+        // Type
+        // ----------------------------------------------------
+
+        std::cout << "\n---------- Type ----------\n";
+
+        std::cout << "Type : "
+                  << NetworkAdapterTypeToString(adapter.Type) << '\n';
+
+        std::cout << "Status : "
+                  << NetworkStatusToString(adapter.Status) << '\n';
+
+        std::cout << "Physical Adapter : "
+                  << adapter.PhysicalAdapter << '\n';
+
+        std::cout << "Enabled : "
+                  << adapter.Enabled << '\n';
+
+        // ----------------------------------------------------
+        // Link
+        // ----------------------------------------------------
+
+        std::cout << "\n---------- Link ----------\n";
+
+        std::cout << "DHCP Enabled : "
+                  << adapter.DHCPEnabled << '\n';
+
+        // ----------------------------------------------------
+        // IPv4
+        // ----------------------------------------------------
+
+        if (!adapter.IPv4.empty())
+        {
+            std::cout << "\n---------- IPv4 ----------\n";
+            for (size_t j = 0; j < adapter.IPv4.size(); j++)
+            {
+                const auto &ip = adapter.IPv4[j];
+
+                std::cout << "\nIPv4 " << j + 1 << '\n';
+
+                std::cout << "Address : "
+                          << ip.Address << '\n';
+
+                std::cout << "Subnet : "
+                          << ip.SubnetMask << '\n';
+
+                std::cout << "Gateway : "
+                          << ip.Gateway << '\n';
+            }
+        }
+
+        // ----------------------------------------------------
+        // IPv6
+        // ----------------------------------------------------
+
+        if (!adapter.IPv6.empty())
+        {
+            std::cout << "\n---------- IPv6 ----------\n";
+
+            for (size_t j = 0; j < adapter.IPv6.size(); j++)
+            {
+                const auto &ip = adapter.IPv6[j];
+
+                std::cout << "\nIPv6 " << j + 1 << '\n';
+
+                std::cout << "Address : "
+                          << ip.Address << '\n';
+
+                std::cout << "Gateway : "
+                          << ip.Gateway << '\n';
+            }
+        }
+
+        // ----------------------------------------------------
+        // DNS
+        // ----------------------------------------------------
+
+        if (!adapter.DNSServers.empty())
+        {
+            std::cout << "\n---------- DNS ----------\n";
+
+            for (const auto &dns : adapter.DNSServers)
+            {
+                std::cout << dns << '\n';
+            }
+        }
+
+        // ----------------------------------------------------
+        // WiFi
+        // ----------------------------------------------------
+        if (adapter.Type == NetworkAdapterType::WiFi)
+        {
+            std::cout << "\n---------- WiFi ----------\n";
+
+            std::cout << "SSID : "
+                      << adapter.WiFi.SSID << '\n';
+
+            std::cout << "BSSID : "
+                      << adapter.WiFi.BSSID << '\n';
+
+            std::cout << "Standard : "
+                      << adapter.WiFi.Standard << '\n';
+
+            std::cout << "Channel : "
+                      << adapter.WiFi.Channel << '\n';
+
+            std::cout << "Signal : "
+                      << adapter.WiFi.SignalStrength
+                      << "%\n";
+
+            std::cout << "RSSI : "
+                      << adapter.WiFi.RSSIdBm
+                      << " dBm\n";
+
+            std::cout << "Band : "
+                      << adapter.WiFi.Band << '\n';
+
+            std::cout << "Security : "
+                      << adapter.WiFi.Security << '\n';
+
+            std::cout << "Connected : "
+                      << (adapter.WiFi.Connected ? "Yes" : "No")
+                      << '\n';
+        }
+
+        // ----------------------------------------------------
+        // Bluetooth
+        // ----------------------------------------------------
+
+        if (adapter.Type == NetworkAdapterType::Bluetooth)
+        {
+            std::cout << "\n---------- Bluetooth ----------\n";
+
+            std::cout << "Supported : "
+                      << adapter.Bluetooth.Supported << '\n';
+
+            std::cout << "Enabled : "
+                      << adapter.Bluetooth.Enabled << '\n';
+
+            std::cout << "Version : "
+                      << adapter.Bluetooth.Version << '\n';
+
+            std::cout << "Connected Devices : "
+                      << adapter.Bluetooth.ConnectedDevices << '\n';
+        }
+
+        // ----------------------------------------------------
+        // Statistics
+        // ----------------------------------------------------
+
+        std::cout << "\n---------- Statistics ----------\n";
+
+        std::cout << "Bytes Sent : "
+                  << adapter.Statistics.BytesSent << '\n';
+
+        std::cout << "Bytes Received : "
+                  << adapter.Statistics.BytesReceived << '\n';
+
+        std::cout << "Packets Sent : "
+                  << adapter.Statistics.PacketsSent << '\n';
+
+        std::cout << "Packets Received : "
+                  << adapter.Statistics.PacketsReceived << '\n';
+
+        std::cout << "Errors : "
+                  << adapter.Statistics.Errors << '\n';
+
+        std::cout << "Dropped Packets : "
+                  << adapter.Statistics.DroppedPackets << '\n';
+    }
+
+    std::cout << "\n========================================\n";
 }

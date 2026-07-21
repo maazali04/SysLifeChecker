@@ -20,20 +20,72 @@
 #pragma comment(lib, "Bthprops.lib")
 #pragma comment(lib, "wlanapi.lib")
 #pragma comment(lib, "wininet.lib")
-#pragma comment(lib,"iphlpapi.lib")
-#pragma comment(lib,"ws2_32.lib")
+#pragma comment(lib, "iphlpapi.lib")
+#pragma comment(lib, "ws2_32.lib")
+
+const char *NetworkAdapterTypeToString(NetworkAdapterType type)
+{
+    switch (type)
+    {
+    case NetworkAdapterType::Ethernet:
+        return "Ethernet";
+
+    case NetworkAdapterType::WiFi:
+        return "Wi-Fi";
+
+    case NetworkAdapterType::Bluetooth:
+        return "Bluetooth";
+
+    case NetworkAdapterType::Cellular:
+        return "Cellular";
+
+    case NetworkAdapterType::Virtual:
+        return "Virtual";
+
+    case NetworkAdapterType::VPN:
+        return "VPN";
+
+    case NetworkAdapterType::Loopback:
+        return "Loopback";
+
+    default:
+        return "Unknown";
+    }
+}
+
+const char *NetworkStatusToString(NetworkStatus status)
+{
+    switch (status)
+    {
+    case NetworkStatus::Connected:
+        return "Connected";
+
+    case NetworkStatus::Disconnected:
+        return "Disconnected";
+
+    case NetworkStatus::Disabled:
+        return "Disabled";
+
+    case NetworkStatus::Connecting:
+        return "Connecting";
+
+    default:
+        return "Unknown";
+    }
+}
 
 //------------------------------------------------------------
 // Internal Functions
 //------------------------------------------------------------
 
-static void FillAdapters(NetworkInfo& network);
-static void FillAdapterConfiguration(NetworkInfo& network);
-static void FillNetworkStatistics(NetworkInfo& network);
-static void FillWiFiInfo(NetworkInfo& network);
-static void FillBluetoothInfo(NetworkInfo& network);
-static void FillInternetStatus(NetworkInfo& network);
-static void CalculateSummary(NetworkInfo& network);
+static void FillAdapters(NetworkInfo &network);
+static void FillAdapterConfiguration(NetworkInfo &network);
+static void FillNetworkStatistics(NetworkInfo &network);
+static void FillWiFiInfo(NetworkInfo &network);
+static void FillBluetoothInfo(NetworkInfo &network);
+static void FillDriverInformation(NetworkInfo &network);
+static void FillInternetStatus(NetworkInfo &network);
+static void CalculateSummary(NetworkInfo &network);
 
 //------------------------------------------------------------
 // Public Functions
@@ -53,6 +105,7 @@ NetworkInfo GetNetworkInfo()
     FillNetworkStatistics(network);
     FillWiFiInfo(network);
     FillBluetoothInfo(network);
+    FillDriverInformation(network);
     FillInternetStatus(network);
     CalculateSummary(network);
 
@@ -63,9 +116,9 @@ NetworkInfo GetNetworkInfo()
 // Fill Adapters
 //------------------------------------------------------------
 
-static void FillAdapters(NetworkInfo& network)
+static void FillAdapters(NetworkInfo &network)
 {
-    IEnumWbemClassObject* enumerator = nullptr;
+    IEnumWbemClassObject *enumerator = nullptr;
 
     HRESULT hr = gService->ExecQuery(
         bstr_t("WQL"),
@@ -77,7 +130,7 @@ static void FillAdapters(NetworkInfo& network)
     if (FAILED(hr))
         return;
 
-    IWbemClassObject* object = nullptr;
+    IWbemClassObject *object = nullptr;
     ULONG returned = 0;
 
     while (enumerator->Next(
@@ -94,20 +147,11 @@ static void FillAdapters(NetworkInfo& network)
 
         GetWMIProperty(object, L"Name", adapter.Name);
         GetWMIProperty(object, L"Description", adapter.Description);
-        GetWMIProperty(object, L"Manufacturer", adapter.Manufacturer);
         GetWMIProperty(object, L"MACAddress", adapter.MACAddress);
         GetWMIProperty(object, L"DeviceID", adapter.DeviceID);
 
+
         adapter.Model = adapter.Description;
-
-        //----------------------------------
-        // Physical Adapter
-        //----------------------------------
-
-        GetWMIProperty(
-            object,
-            L"PhysicalAdapter",
-            adapter.PhysicalAdapter);
 
         //----------------------------------
         // Enabled
@@ -124,55 +168,6 @@ static void FillAdapters(NetworkInfo& network)
         }
 
         //----------------------------------
-        // Link Speed
-        //----------------------------------
-
-        uint64_t speed = 0;
-
-        if (GetWMIProperty(
-                object,
-                L"Speed",
-                speed))
-        {
-            adapter.LinkSpeedMbps =
-                speed / 1000000ULL;
-
-            adapter.MaxLinkSpeedMbps =
-                adapter.LinkSpeedMbps;
-        }
-
-        //----------------------------------
-        // Connection Status
-        //----------------------------------
-
-        uint16_t status = 0;
-
-        if (GetWMIProperty(
-                object,
-                L"NetConnectionStatus",
-                status))
-        {
-            switch (status)
-            {
-            case 2:
-                adapter.Status = NetworkStatus::Connected;
-                break;
-
-            case 7:
-                adapter.Status = NetworkStatus::Disconnected;
-                break;
-
-            case 0:
-                adapter.Status = NetworkStatus::Disconnected;
-                break;
-
-            default:
-                adapter.Status = NetworkStatus::Unknown;
-                break;
-            }
-        }
-
-        //----------------------------------
         // Adapter Type
         //----------------------------------
 
@@ -184,9 +179,15 @@ static void FillAdapters(NetworkInfo& network)
             lower.begin(),
             ::tolower);
 
-        if (lower.find("wi-fi") != std::string::npos ||
-            lower.find("wireless") != std::string::npos ||
-            lower.find("wifi") != std::string::npos)
+        if (lower.find("wi-fi direct") != std::string::npos ||
+            lower.find("miniport") != std::string::npos ||
+            lower.find("virtual") != std::string::npos)
+        {
+            adapter.Type = NetworkAdapterType::Virtual;
+        }
+        else if (lower.find("wireless") != std::string::npos ||
+                 lower.find("wifi") != std::string::npos ||
+                 lower.find("wi-fi") != std::string::npos)
         {
             adapter.Type = NetworkAdapterType::WiFi;
         }
@@ -217,6 +218,47 @@ static void FillAdapters(NetworkInfo& network)
         }
 
         //----------------------------------
+        // Physical Adapter
+        //----------------------------------
+
+        GetWMIProperty(
+            object,
+            L"PhysicalAdapter",
+            adapter.PhysicalAdapter);
+
+
+        //----------------------------------
+        // Connection Status
+        //----------------------------------
+
+        uint16_t status = 0;
+
+        if (GetWMIProperty(
+                object,
+                L"NetConnectionStatus",
+                status))
+        {
+            switch (status)
+            {
+            case 2:
+                adapter.Status = NetworkStatus::Connected;
+                break;
+
+            case 0:
+            case 7:
+                adapter.Status = NetworkStatus::Disconnected;
+                break;
+
+            default:
+                if (adapter.Enabled)
+                    adapter.Status = NetworkStatus::Disconnected;
+                else
+                    adapter.Status = NetworkStatus::Disabled;
+                break;
+            }
+        }
+
+        //----------------------------------
 
         network.Adapters.push_back(adapter);
 
@@ -230,9 +272,9 @@ static void FillAdapters(NetworkInfo& network)
 // Fill Adapter Configuration
 //------------------------------------------------------------
 
-static void FillAdapterConfiguration(NetworkInfo& network)
+static void FillAdapterConfiguration(NetworkInfo &network)
 {
-    IEnumWbemClassObject* enumerator = nullptr;
+    IEnumWbemClassObject *enumerator = nullptr;
 
     HRESULT hr = gService->ExecQuery(
         bstr_t("WQL"),
@@ -244,7 +286,7 @@ static void FillAdapterConfiguration(NetworkInfo& network)
     if (FAILED(hr))
         return;
 
-    IWbemClassObject* object = nullptr;
+    IWbemClassObject *object = nullptr;
     ULONG returned = 0;
 
     while (enumerator->Next(
@@ -260,9 +302,9 @@ static void FillAdapterConfiguration(NetworkInfo& network)
             L"Description",
             description);
 
-        NetworkAdapter* adapter = nullptr;
+        NetworkAdapter *adapter = nullptr;
 
-        for (auto& a : network.Adapters)
+        for (auto &a : network.Adapters)
         {
             if (a.Description == description)
             {
@@ -297,7 +339,7 @@ static void FillAdapterConfiguration(NetworkInfo& network)
         {
             if ((vt.vt & VT_ARRAY) && vt.parray)
             {
-                SAFEARRAY* sa = vt.parray;
+                SAFEARRAY *sa = vt.parray;
 
                 LONG lBound, uBound;
 
@@ -332,6 +374,47 @@ static void FillAdapterConfiguration(NetworkInfo& network)
         }
 
         VariantClear(&vt);
+        //--------------------------------------------------
+        // Subnet Mask
+        //--------------------------------------------------
+
+        VariantInit(&vt);
+
+        if (SUCCEEDED(object->Get(L"IPSubnet", 0, &vt, nullptr, nullptr)))
+        {
+            if ((vt.vt & VT_ARRAY) && vt.parray)
+            {
+                SAFEARRAY *sa = vt.parray;
+
+                LONG lBound, uBound;
+
+                SafeArrayGetLBound(sa, 1, &lBound);
+                SafeArrayGetUBound(sa, 1, &uBound);
+
+                LONG ipv4Index = 0;
+
+                for (LONG i = lBound; i <= uBound; i++)
+                {
+                    BSTR value;
+
+                    SafeArrayGetElement(sa, &i, &value);
+
+                    std::wstring ws(value);
+
+                    std::string subnet(ws.begin(), ws.end());
+
+                    if (subnet.find(':') == std::string::npos)
+                    {
+                        if (ipv4Index < adapter->IPv4.size())
+                            adapter->IPv4[ipv4Index++].SubnetMask = subnet;
+                    }
+
+                    SysFreeString(value);
+                }
+            }
+        }
+
+        VariantClear(&vt);
 
         //--------------------------------------------------
         // Gateway
@@ -343,7 +426,7 @@ static void FillAdapterConfiguration(NetworkInfo& network)
         {
             if ((vt.vt & VT_ARRAY) && vt.parray)
             {
-                SAFEARRAY* sa = vt.parray;
+                SAFEARRAY *sa = vt.parray;
 
                 LONG lBound, uBound;
 
@@ -390,7 +473,7 @@ static void FillAdapterConfiguration(NetworkInfo& network)
         {
             if ((vt.vt & VT_ARRAY) && vt.parray)
             {
-                SAFEARRAY* sa = vt.parray;
+                SAFEARRAY *sa = vt.parray;
 
                 LONG lBound, uBound;
 
@@ -425,7 +508,7 @@ static void FillAdapterConfiguration(NetworkInfo& network)
 // Fill Statistics
 //------------------------------------------------------------
 
-static void FillNetworkStatistics(NetworkInfo& network)
+static void FillNetworkStatistics(NetworkInfo &network)
 {
     PMIB_IF_TABLE2 table = nullptr;
 
@@ -434,12 +517,12 @@ static void FillNetworkStatistics(NetworkInfo& network)
 
     for (ULONG i = 0; i < table->NumEntries; i++)
     {
-        const MIB_IF_ROW2& row = table->Table[i];
+        const MIB_IF_ROW2 &row = table->Table[i];
 
         std::wstring ws(row.Description);
         std::string description(ws.begin(), ws.end());
 
-        for (auto& adapter : network.Adapters)
+        for (auto &adapter : network.Adapters)
         {
             if (adapter.Description != description)
                 continue;
@@ -466,11 +549,7 @@ static void FillNetworkStatistics(NetworkInfo& network)
                 row.InDiscards +
                 row.OutDiscards;
 
-            adapter.LinkSpeedMbps =
-                row.ReceiveLinkSpeed / 1000000ULL;
 
-            adapter.MaxLinkSpeedMbps =
-                row.TransmitLinkSpeed / 1000000ULL;
 
             break;
         }
@@ -483,7 +562,7 @@ static void FillNetworkStatistics(NetworkInfo& network)
 // Wi-Fi
 //------------------------------------------------------------
 
-static void FillWiFiInfo(NetworkInfo& network)
+static void FillWiFiInfo(NetworkInfo &network)
 {
     HANDLE client = nullptr;
 
@@ -509,9 +588,9 @@ static void FillWiFiInfo(NetworkInfo& network)
         return;
     }
 
-        for (DWORD i = 0; i < interfaces->dwNumberOfItems; i++)
+    for (DWORD i = 0; i < interfaces->dwNumberOfItems; i++)
     {
-        WLAN_INTERFACE_INFO& iface =
+        WLAN_INTERFACE_INFO &iface =
             interfaces->InterfaceInfo[i];
 
         std::wstring ws(iface.strInterfaceDescription);
@@ -520,9 +599,9 @@ static void FillWiFiInfo(NetworkInfo& network)
             ws.begin(),
             ws.end());
 
-        NetworkAdapter* adapter = nullptr;
+        NetworkAdapter *adapter = nullptr;
 
-        for (auto& a : network.Adapters)
+        for (auto &a : network.Adapters)
         {
             if (a.Description == description)
             {
@@ -533,7 +612,7 @@ static void FillWiFiInfo(NetworkInfo& network)
 
         if (!adapter)
             continue;
-                    PWLAN_CONNECTION_ATTRIBUTES attributes = nullptr;
+        PWLAN_CONNECTION_ATTRIBUTES attributes = nullptr;
 
         DWORD dataSize = 0;
 
@@ -545,22 +624,24 @@ static void FillWiFiInfo(NetworkInfo& network)
                 wlan_intf_opcode_current_connection,
                 nullptr,
                 &dataSize,
-                reinterpret_cast<PVOID*>(&attributes),
+                reinterpret_cast<PVOID *>(&attributes),
                 &opcode) != ERROR_SUCCESS)
         {
             continue;
         }
-                adapter->WiFi.Connected = true;
+        adapter->WiFi.Connected = true;
 
         DOT11_SSID ssid =
             attributes->wlanAssociationAttributes.dot11Ssid;
 
         adapter->WiFi.SSID.assign(
-            reinterpret_cast<char*>(ssid.ucSSID),
+            reinterpret_cast<char *>(ssid.ucSSID),
             ssid.uSSIDLength);
-                    adapter->WiFi.SignalStrength =
+        adapter->WiFi.SignalStrength =
             attributes->wlanAssociationAttributes.wlanSignalQuality;
-                    char buffer[32];
+        adapter->WiFi.RSSIdBm =
+            -100 + (adapter->WiFi.SignalStrength / 2);
+        char buffer[32];
 
         sprintf_s(
             buffer,
@@ -573,7 +654,34 @@ static void FillWiFiInfo(NetworkInfo& network)
             attributes->wlanAssociationAttributes.dot11Bssid[5]);
 
         adapter->WiFi.BSSID = buffer;
-                switch (attributes->wlanAssociationAttributes.dot11PhyType)
+        DWORD dataSize2 = 0;
+        ULONG *channel = nullptr;
+
+        if (WlanQueryInterface(
+                client,
+                &iface.InterfaceGuid,
+                wlan_intf_opcode_channel_number,
+                nullptr,
+                &dataSize2,
+                reinterpret_cast<PVOID *>(&channel),
+                &opcode) == ERROR_SUCCESS)
+        {
+            adapter->WiFi.Channel = *channel;
+
+            WlanFreeMemory(channel);
+        }
+
+        if (adapter->WiFi.Channel >= 1 &&
+            adapter->WiFi.Channel <= 14)
+        {
+            adapter->WiFi.Band = "2.4 GHz";
+        }
+        else if (adapter->WiFi.Channel > 14)
+        {
+            adapter->WiFi.Band = "5 GHz";
+        }
+
+        switch (attributes->wlanAssociationAttributes.dot11PhyType)
         {
         case dot11_phy_type_fhss:
             adapter->WiFi.Standard = "802.11";
@@ -606,10 +714,39 @@ static void FillWiFiInfo(NetworkInfo& network)
         default:
             adapter->WiFi.Standard = "Unknown";
             break;
-        }        adapter->WiFi.Security =
-            std::to_string(
-                attributes->wlanSecurityAttributes.dot11AuthAlgorithm);
-                    WlanFreeMemory(attributes);
+        }
+
+        switch (attributes->wlanSecurityAttributes.dot11AuthAlgorithm)
+        {
+        case DOT11_AUTH_ALGO_80211_OPEN:
+            adapter->WiFi.Security = "Open";
+            break;
+
+        case DOT11_AUTH_ALGO_80211_SHARED_KEY:
+            adapter->WiFi.Security = "WEP";
+            break;
+
+        case DOT11_AUTH_ALGO_WPA:
+        case DOT11_AUTH_ALGO_WPA_PSK:
+            adapter->WiFi.Security = "WPA";
+            break;
+
+        case DOT11_AUTH_ALGO_RSNA:
+        case DOT11_AUTH_ALGO_RSNA_PSK:
+            adapter->WiFi.Security = "WPA2";
+            break;
+
+        case DOT11_AUTH_ALGO_WPA3:
+        case DOT11_AUTH_ALGO_WPA3_SAE:
+            adapter->WiFi.Security = "WPA3";
+            break;
+
+        default:
+            adapter->WiFi.Security = "Unknown";
+            break;
+        }
+
+        WlanFreeMemory(attributes);
     }
 
     WlanFreeMemory(interfaces);
@@ -621,7 +758,7 @@ static void FillWiFiInfo(NetworkInfo& network)
 // Bluetooth
 //------------------------------------------------------------
 
-static void FillBluetoothInfo(NetworkInfo& network)
+static void FillBluetoothInfo(NetworkInfo &network)
 {
     BLUETOOTH_FIND_RADIO_PARAMS params{};
     params.dwSize = sizeof(params);
@@ -644,7 +781,7 @@ static void FillBluetoothInfo(NetworkInfo& network)
             std::wstring ws(info.szName);
             std::string radioName(ws.begin(), ws.end());
 
-            for (auto& adapter : network.Adapters)
+            for (auto &adapter : network.Adapters)
             {
                 if (adapter.Type == NetworkAdapterType::Bluetooth)
                 {
@@ -665,7 +802,71 @@ static void FillBluetoothInfo(NetworkInfo& network)
 // Internet
 //------------------------------------------------------------
 
-static void FillInternetStatus(NetworkInfo& network)
+static void FillDriverInformation(NetworkInfo& network)
+{
+    IEnumWbemClassObject* enumerator = nullptr;
+
+    HRESULT hr = gService->ExecQuery(
+        bstr_t("WQL"),
+        bstr_t("SELECT DeviceName, DriverVersion, DriverDate, DriverProviderName FROM Win32_PnPSignedDriver"),
+        WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
+        nullptr,
+        &enumerator);
+
+    if (FAILED(hr))
+        return;
+
+    IWbemClassObject* object = nullptr;
+    ULONG returned = 0;
+
+    while (enumerator->Next(
+               WBEM_INFINITE,
+               1,
+               &object,
+               &returned) == WBEM_S_NO_ERROR)
+    {
+        std::string deviceName;
+        std::string version;
+        std::string provider;
+        std::string date;
+
+        GetWMIProperty(object, L"DeviceName", deviceName);
+        GetWMIProperty(object, L"DriverVersion", version);
+        GetWMIProperty(object, L"DriverProviderName", provider);
+        GetWMIProperty(object, L"DriverDate", date);
+
+        for (auto& adapter : network.Adapters)
+        {
+            if (adapter.Name != deviceName &&
+                adapter.Description != deviceName)
+            {
+                continue;
+            }
+
+            if (!version.empty())
+                adapter.DriverVersion = version;
+
+            if (!provider.empty())
+                adapter.Manufacturer = provider;
+
+            if (date.length() >= 8)
+            {
+                adapter.DriverDate =
+                    date.substr(0,4) + "-" +
+                    date.substr(4,2) + "-" +
+                    date.substr(6,2);
+            }
+
+            break;
+        }
+
+        object->Release();
+    }
+
+    enumerator->Release();
+}
+
+static void FillInternetStatus(NetworkInfo &network)
 {
     DWORD flags = 0;
 
@@ -675,7 +876,7 @@ static void FillInternetStatus(NetworkInfo& network)
     if (!network.InternetAvailable)
         return;
 
-    for (auto& adapter : network.Adapters)
+    for (auto &adapter : network.Adapters)
     {
         if (adapter.Status == NetworkStatus::Connected)
         {
@@ -689,16 +890,21 @@ static void FillInternetStatus(NetworkInfo& network)
 // Summary
 //------------------------------------------------------------
 
-static void CalculateSummary(NetworkInfo& network)
+static void CalculateSummary(NetworkInfo &network)
 {
     network.TotalAdapters =
         static_cast<uint32_t>(network.Adapters.size());
 
     network.ConnectedAdapters = 0;
 
-    for (const auto& adapter : network.Adapters)
+    for (auto &adapter : network.Adapters)
     {
-        if (adapter.Status == NetworkStatus::Connected)
+        if (!adapter.IPv4.empty() || !adapter.IPv6.empty())
+        {
             network.ConnectedAdapters++;
+
+            if (adapter.Status == NetworkStatus::Unknown)
+                adapter.Status = NetworkStatus::Connected;
+        }
     }
 }

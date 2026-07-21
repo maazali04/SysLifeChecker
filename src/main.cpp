@@ -18,11 +18,11 @@ int main()
     // TestRAM(pc.RAM);
     // TestStorage(pc.Storage);
     // TestGPU(pc.GPUs);
-    for (const auto& battery : pc.Batteries)
-{
-    TestBattery(battery);
-}
-    // TestNetwork(pc.Network);
+//     for (const auto& battery : pc.Batteries)
+// {
+//     TestBattery(battery);
+// }
+    TestNetwork(pc.Network);
     // TestDisplay(pc.Displays);
     // TestWindows(pc.Windows);
     // TestSecurity(pc.Security);
