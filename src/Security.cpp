@@ -5,6 +5,7 @@
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "oleaut32.lib")
 
+
 static void FillTPMInfo(SecurityInfo& security);
 static void FillSecureBootInfo(SecurityInfo& security);
 static void FillDefenderInfo(SecurityInfo& security);
@@ -13,6 +14,9 @@ static void FillFirewallInfo(SecurityInfo& security);
 static void FillEncryptionInfo(SecurityInfo& security);
 static void FillWindowsSecurity(SecurityInfo& security);
 static void FillUsers(SecurityInfo& security);
+
+const char* TPMVersionToString(TPMVersion version);
+const char* DriveEncryptionTypeToString(DriveEncryptionType type);
 
 SecurityInfo GetSecurityInfo()
 {
@@ -28,6 +32,39 @@ SecurityInfo GetSecurityInfo()
     FillUsers(security);
 
     return security;
+}
+
+const char* TPMVersionToString(TPMVersion version)
+{
+    switch (version)
+    {
+    case TPMVersion::TPM12:
+        return "TPM 1.2";
+
+    case TPMVersion::TPM20:
+        return "TPM 2.0";
+
+    default:
+        return "Unknown";
+    }
+}
+
+const char* DriveEncryptionTypeToString(DriveEncryptionType type)
+{
+    switch (type)
+    {
+    case DriveEncryptionType::BitLocker:
+        return "BitLocker";
+
+    case DriveEncryptionType::DeviceEncryption:
+        return "Device Encryption";
+
+    case DriveEncryptionType::ThirdParty:
+        return "Third Party";
+
+    default:
+        return "None";
+    }
 }
 
 static void FillTPMInfo(SecurityInfo& security)
@@ -273,9 +310,6 @@ static void FillDefenderInfo(SecurityInfo& security)
             security.Defender.Enabled =
                 (state & 0x1000) != 0;
 
-            security.Defender.RealTimeProtection =
-                (state & 0x0010) != 0;
-
             security.Defender.UpToDate =
                 (state & 0x000010) == 0;
 
@@ -364,6 +398,11 @@ static void FillInstalledAntivirus(SecurityInfo& security)
             object,
             L"displayName",
             antivirus.Name);
+            if (antivirus.Name.find("Defender") != std::string::npos)
+{
+    object->Release();
+    continue;
+}
 
         uint32_t state = 0;
 
@@ -378,9 +417,6 @@ static void FillInstalledAntivirus(SecurityInfo& security)
 
         antivirus.Enabled =
             (state & 0x1000) != 0;
-
-        antivirus.RealTimeProtection =
-            (state & 0x0010) != 0;
 
         antivirus.UpToDate =
             (state & 0x000010) == 0;
@@ -584,18 +620,6 @@ static void FillWindowsSecurity(SecurityInfo& security)
         security.UserAccountControlEnabled = (value != 0);
     }
 
-    //----------------------------------------
-    // SmartScreen
-    //----------------------------------------
-
-    if (ReadRegistryDWORD(
-            HKEY_LOCAL_MACHINE,
-            "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer",
-            "SmartScreenEnabled",
-            value))
-    {
-        security.SmartScreenEnabled = (value != 0);
-    }
 
     //----------------------------------------
     // Memory Integrity (HVCI)
@@ -610,39 +634,7 @@ static void FillWindowsSecurity(SecurityInfo& security)
         security.MemoryIntegrityEnabled = (value != 0);
     }
 
-    //----------------------------------------
-    // Device Guard
-    //----------------------------------------
 
-    if (ReadRegistryDWORD(
-            HKEY_LOCAL_MACHINE,
-            "SYSTEM\\CurrentControlSet\\Control\\DeviceGuard",
-            "EnableVirtualizationBasedSecurity",
-            value))
-    {
-        security.DeviceGuardEnabled = (value != 0);
-        security.VirtualizationBasedSecurity = (value != 0);
-    }
-
-    //----------------------------------------
-    // Credential Guard
-    //----------------------------------------
-
-    if (ReadRegistryDWORD(
-            HKEY_LOCAL_MACHINE,
-            "SYSTEM\\CurrentControlSet\\Control\\Lsa",
-            "LsaCfgFlags",
-            value))
-    {
-        security.CredentialGuardEnabled = (value != 0);
-    }
-
-    //----------------------------------------
-    // Core Isolation
-    //----------------------------------------
-
-    security.CoreIsolationEnabled =
-        security.MemoryIntegrityEnabled;
 }
 
 static void FillUsers(SecurityInfo& security)
@@ -701,28 +693,6 @@ static void FillUsers(SecurityInfo& security)
             L"PasswordExpires",
             user.PasswordExpires);
 
-        bool admin = false;
-
-        VARIANT vt;
-        VariantInit(&vt);
-
-        if (SUCCEEDED(object->Get(
-                L"SIDType",
-                0,
-                &vt,
-                nullptr,
-                nullptr)))
-        {
-            // Basic approximation.
-            // Proper administrator detection would require
-            // checking local group membership.
-
-            admin = (vt.uintVal == 1);
-        }
-
-        VariantClear(&vt);
-
-        user.Administrator = admin;
 
         security.Users.push_back(user);
 

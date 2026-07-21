@@ -9,8 +9,8 @@
 // void TestBattery(const BatteryInfo& battery);
 // void TestNetwork(const NetworkInfo& network);
 // void TestDisplay(const DisplaySystemInfo& displays);
-void TestWindows(const WindowsInfo& windows);
-// void TestSecurity(const SecurityInfo& security);
+// void TestWindows(const WindowsInfo& windows);
+void TestSecurity(const SecurityInfo& security);
 // void TestPorts(const PortSystemInfo& ports);
 // void TestAudio(const AudioInfo& audio);
 // void TestCamera(const CameraSystemInfo& cameras);

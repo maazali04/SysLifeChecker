@@ -6,6 +6,7 @@
 #include "Network.hpp"
 #include "Display.hpp"
 #include "WindowsInfo.hpp"
+#include "Security.hpp"
 
 #include <iostream>
 
@@ -1166,4 +1167,189 @@ void TestWindows(const WindowsInfo& windows)
 
     std::cout << "Activation ID : "
               << windows.Activation.ActivationID << '\n';
+}
+
+void TestSecurity(const SecurityInfo& security)
+{
+    std::cout << "\n========================================\n";
+    std::cout << "SECURITY INFORMATION\n";
+    std::cout << "========================================\n";
+
+    //----------------------------------------
+    // Secure Boot
+    //----------------------------------------
+
+    std::cout << "\n---------- Secure Boot ----------\n";
+
+    std::cout << "Supported : "
+              << (security.SecureBootSupported ? "Yes" : "No") << '\n';
+
+    std::cout << "Enabled : "
+              << (security.SecureBootEnabled ? "Yes" : "No") << '\n';
+
+    //----------------------------------------
+    // TPM
+    //----------------------------------------
+
+    std::cout << "\n---------- TPM ----------\n";
+
+    std::cout << "Present : "
+              << (security.TPMPresent ? "Yes" : "No") << '\n';
+
+    std::cout << "Ready : "
+              << (security.TPMReady ? "Yes" : "No") << '\n';
+
+    std::cout << "Enabled : "
+              << (security.TPMEnabled ? "Yes" : "No") << '\n';
+
+    std::cout << "Version : "
+              << TPMVersionToString(security.TPM) << '\n';
+
+    if (!security.TPMManufacturer.empty())
+    {
+        std::cout << "Manufacturer : "
+                  << security.TPMManufacturer << '\n';
+    }
+
+    if (!security.TPMFirmwareVersion.empty())
+    {
+        std::cout << "Firmware Version : "
+                  << security.TPMFirmwareVersion << '\n';
+    }
+
+    //----------------------------------------
+    // Microsoft Defender
+    //----------------------------------------
+
+    std::cout << "\n---------- Microsoft Defender ----------\n";
+
+    std::cout << "Name : "
+              << security.Defender.Name << '\n';
+
+
+    std::cout << "Enabled : "
+              << (security.Defender.Enabled ? "Yes" : "No") << '\n';
+
+    std::cout << "Up To Date : "
+              << (security.Defender.UpToDate ? "Yes" : "No") << '\n';
+
+
+    //----------------------------------------
+    // Other Antivirus
+    //----------------------------------------
+
+    std::cout << "\n---------- Other Antivirus ----------\n";
+
+if (security.InstalledAntivirus.empty())
+{
+    std::cout << "None Installed\n";
+}
+else
+{
+    for (size_t i = 0; i < security.InstalledAntivirus.size(); i++)
+    {
+        const auto& antivirus = security.InstalledAntivirus[i];
+
+        std::cout << "\nAntivirus " << i + 1 << '\n';
+        std::cout << "Name : " << antivirus.Name << '\n';
+        std::cout << "Enabled : " << (antivirus.Enabled ? "Yes" : "No") << '\n';
+        std::cout << "Up To Date : " << (antivirus.UpToDate ? "Yes" : "No") << '\n';
+    }
+}
+
+    //----------------------------------------
+    // Firewall
+    //----------------------------------------
+
+    std::cout << "\n---------- Firewall ----------\n";
+
+    std::cout << "Enabled : "
+              << (security.Firewall.Enabled ? "Yes" : "No") << '\n';
+
+    std::cout << "Domain Profile : "
+              << (security.Firewall.DomainProfile ? "On" : "Off") << '\n';
+
+    std::cout << "Private Profile : "
+              << (security.Firewall.PrivateProfile ? "On" : "Off") << '\n';
+
+    std::cout << "Public Profile : "
+              << (security.Firewall.PublicProfile ? "On" : "Off") << '\n';
+
+    //----------------------------------------
+    // Drive Encryption
+    //----------------------------------------
+
+    if (!security.EncryptedDrives.empty())
+    {
+        std::cout << "\n---------- Drive Encryption ----------\n";
+
+        for (const auto& drive : security.EncryptedDrives)
+        {
+            std::cout << "\nDrive : "
+                      << drive.DriveLetter << '\n';
+
+            std::cout << "Type : "
+                      << DriveEncryptionTypeToString(drive.Type) << '\n';
+
+            std::cout << "Encrypted : "
+                      << (drive.Encrypted ? "Yes" : "No") << '\n';
+
+            std::cout << "Progress : "
+                      << drive.EncryptionPercent
+                      << "%\n";
+        }
+    }
+
+    //----------------------------------------
+    // Windows Security
+    //----------------------------------------
+
+    std::cout << "\n---------- Windows Security ----------\n";
+
+    std::cout << "Memory Integrity : "
+              << (security.MemoryIntegrityEnabled ? "Enabled" : "Disabled") << '\n';
+
+
+    std::cout << "User Account Control : "
+              << (security.UserAccountControlEnabled ? "Enabled" : "Disabled") << '\n';
+
+
+
+    //----------------------------------------
+    // User Accounts
+    //----------------------------------------
+
+    if (!security.Users.empty())
+    {
+        std::cout << "\n---------- User Accounts ----------\n";
+
+        for (size_t i = 0; i < security.Users.size(); i++)
+        {
+            const auto& user = security.Users[i];
+
+            std::cout << "\nUser "
+                      << i + 1 << '\n';
+
+            std::cout << "Username : "
+                      << user.Username << '\n';
+
+            if (!user.FullName.empty())
+            {
+                std::cout << "Full Name : "
+                          << user.FullName << '\n';
+            }
+
+            std::cout << "Password Required : "
+                      << (user.PasswordRequired ? "Yes" : "No") << '\n';
+
+            std::cout << "Password Expires : "
+                      << (user.PasswordExpires ? "Yes" : "No") << '\n';
+
+            std::cout << "Disabled : "
+                      << (user.AccountDisabled ? "Yes" : "No") << '\n';
+
+            std::cout << "Locked : "
+                      << (user.AccountLocked ? "Yes" : "No") << '\n';
+        }
+    }
 }

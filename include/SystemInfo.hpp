@@ -1319,13 +1319,10 @@ struct AntivirusInfo
 {
     std::string Name;
 
-    std::string Version;
-
     bool Enabled = false;
 
     bool UpToDate = false;
 
-    bool RealTimeProtection = false;
 };
 
 struct FirewallInfo
@@ -1355,8 +1352,6 @@ struct UserAccountInfo
     std::string Username;
 
     std::string FullName;
-
-    bool Administrator = false;
 
     bool PasswordRequired = true;
 
@@ -1409,17 +1404,7 @@ struct SecurityInfo
 
     bool MemoryIntegrityEnabled = false;
 
-    bool CoreIsolationEnabled = false;
-
-    bool SmartScreenEnabled = false;
-
     bool UserAccountControlEnabled = false;
-
-    bool VirtualizationBasedSecurity = false;
-
-    bool CredentialGuardEnabled = false;
-
-    bool DeviceGuardEnabled = false;
 
     // ---------- Accounts ----------
 
