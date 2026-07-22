@@ -8,6 +8,8 @@
 #include "WindowsInfo.hpp"
 #include "Security.hpp"
 #include "Audio.hpp"
+#include "Motherboard.hpp"
+#include "Bios.hpp"
 
 #include <iostream>
 
@@ -1448,4 +1450,132 @@ void TestAudio(const AudioInfo& audio)
         std::cout << "Muted            : "
                   << (device.Muted ? "Yes" : "No") << "\n";
     }
+}
+
+
+void TestCamera(const CameraSystemInfo& cameras)
+{
+    std::cout << "\n========================================\n";
+    std::cout << "CAMERA INFORMATION\n";
+    std::cout << "========================================\n\n";
+
+    std::cout << "Total Cameras : "
+              << cameras.TotalCameras
+              << "\n";
+
+    if (cameras.Cameras.empty())
+    {
+        std::cout << "\nNo camera detected.\n";
+        return;
+    }
+
+    for (size_t i = 0; i < cameras.Cameras.size(); i++)
+    {
+        const CameraInfo& camera = cameras.Cameras[i];
+
+        std::cout << "\n----------------------------------------\n";
+        std::cout << "Camera #" << i + 1 << "\n";
+        std::cout << "----------------------------------------\n";
+
+        std::cout << "Name                  : " << camera.Name << '\n';
+        std::cout << "Manufacturer          : " << camera.Manufacturer << '\n';
+        std::cout << "Driver Version        : " << camera.DriverVersion << '\n';
+        std::cout << "Device ID             : " << camera.DeviceID << '\n';
+
+        std::cout << "Maximum Width         : " << camera.MaxWidth << '\n';
+        std::cout << "Maximum Height        : " << camera.MaxHeight << '\n';
+        std::cout << "Maximum FPS           : " << camera.MaxFPS << '\n';
+
+
+
+        std::cout << "Connected             : "
+                  << (camera.Connected ? "Yes" : "No") << '\n';
+
+        std::cout << "Enabled               : "
+                  << (camera.Enabled ? "Yes" : "No") << '\n';
+
+
+    }
+}
+
+void TestDrivers(const DriverSystemInfo& drivers)
+{
+    std::cout << "\n";
+    std::cout << "========================================\n";
+    std::cout << "DRIVER INFORMATION\n";
+    std::cout << "========================================\n\n";
+
+    std::cout << "Total Drivers : "
+              << drivers.TotalDrivers
+              << "\n";
+
+    if (drivers.Drivers.empty())
+    {
+        std::cout << "\n";
+        std::cout << "No drivers detected.\n";
+        return;
+    }
+
+    for (size_t i = 0; i < drivers.Drivers.size(); i++)
+    {
+        const DriverInfo& driver = drivers.Drivers[i];
+
+        std::cout << "\n";
+        std::cout << "----------------------------------------\n";
+        std::cout << "Driver #" << i + 1 << "\n";
+        std::cout << "----------------------------------------\n";
+
+        std::cout << "Device Name       : " << driver.DeviceName << "\n";
+        std::cout << "Provider          : " << driver.Provider << "\n";
+        std::cout << "Version           : " << driver.Version << "\n";
+        std::cout << "Driver Date       : " << driver.Date << "\n";
+        std::cout << "INF File          : " << driver.INFFile << "\n";
+
+        std::cout << "Digitally Signed  : "
+                  << (driver.DigitallySigned ? "Yes" : "No")
+                  << "\n";
+
+        std::cout << "Driver Present    : "
+                  << (driver.DriverPresent ? "Yes" : "No")
+                  << "\n";
+    }
+}
+
+
+void TestMotherBoard(const MotherboardInfo& board){
+    std::cout << "\n========================================\n";
+    std::cout << "MOTHERBOARD INFORMATION\n";
+    std::cout << "========================================\n\n";
+
+    std::cout << "Manufacturer      : " << board.Manufacturer << '\n';
+    std::cout << "Product Name      : " << board.ProductName << '\n';
+    std::cout << "Model             : " << board.Model << '\n';
+    std::cout << "Version           : " << board.Version << '\n';
+    std::cout << "Serial Number     : " << board.SerialNumber << '\n';
+    std::cout << "Asset Tag         : " << board.AssetTag << '\n';
+    std::cout << "UUID              : " << board.UUID << '\n';
+
+
+
+    std::cout << "\n----- Memory -----\n";
+
+    std::cout << "RAM Slots         : " << board.RAMSlots << '\n';
+
+
+    std::cout << "ECC Supported     : "
+              << (board.ECCSupported ? "Yes" : "No")
+              << '\n';
+}
+
+void TestBIOS(const BIOSInfo& bios){
+    std::cout << "\n========================================\n";
+std::cout << "BIOS INFORMATION\n";
+std::cout << "========================================\n\n";
+
+std::cout << "Vendor          : " << bios.Vendor << '\n';
+std::cout << "Version         : " << bios.Version << '\n';
+std::cout << "Release Date    : " << bios.ReleaseDate << '\n';
+std::cout << "Description     : " << bios.Description << '\n';
+std::cout << "Serial Number   : " << bios.SerialNumber << '\n';
+std::cout << "SMBIOS Version  : " << bios.SMBIOSVersion << '\n';
 }

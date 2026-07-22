@@ -1,97 +1,58 @@
 #include "Motherboard.hpp"
-
+#include "WMIHelper.hpp"
 
 #include <windows.h>
 #include <Wbemidl.h>
 #include <comdef.h>
 
-#pragma comment(lib,"wbemuuid.lib")
+#pragma comment(lib, "wbemuuid.lib")
 
-static void FillBaseBoard(MotherboardInfo& board)
+std::string FormFactorToString(MotherboardFormFactor form)
 {
-    HRESULT hr;
-
-    hr = CoInitializeEx(
-        nullptr,
-        COINIT_MULTITHREADED);
-
-    if (FAILED(hr) && hr != RPC_E_CHANGED_MODE)
-        return;
-
-    hr = CoInitializeSecurity(
-        nullptr,
-        -1,
-        nullptr,
-        nullptr,
-        RPC_C_AUTHN_LEVEL_DEFAULT,
-        RPC_C_IMP_LEVEL_IMPERSONATE,
-        nullptr,
-        EOAC_NONE,
-        nullptr);
-
-    IWbemLocator* locator = nullptr;
-
-    hr = CoCreateInstance(
-        CLSID_WbemLocator,
-        nullptr,
-        CLSCTX_INPROC_SERVER,
-        IID_IWbemLocator,
-        (LPVOID*)&locator);
-
-    if (FAILED(hr))
+    switch (form)
     {
-        CoUninitialize();
-        return;
+    case MotherboardFormFactor::ATX:
+        return "ATX";
+    case MotherboardFormFactor::MicroATX:
+        return "MicroATX";
+    case MotherboardFormFactor::MiniITX:
+        return "MiniITX";
+    case MotherboardFormFactor::EATX:
+        return "EATX";
+    case MotherboardFormFactor::XLATX:
+        return "XLATX";
+    case MotherboardFormFactor::NanoITX:
+        return "NanoITX";
+    case MotherboardFormFactor::PicoITX:
+        return "PicoITX";
+    case MotherboardFormFactor::Proprietary:
+        return "Proprietary";
+    default:
+        return "Unknown";
     }
+}
 
-    IWbemServices* services = nullptr;
-
-    hr = locator->ConnectServer(
-        _bstr_t(L"ROOT\\CIMV2"),
-        nullptr,
-        nullptr,
-        nullptr,
-        0,
-        nullptr,
-        nullptr,
-        &services);
-
-    if (FAILED(hr))
-    {
-        locator->Release();
-        CoUninitialize();
+static void FillBaseBoard(MotherboardInfo &board)
+{
+    if (!gService)
         return;
-    }
+    IEnumWbemClassObject *enumerator = nullptr;
 
-    CoSetProxyBlanket(
-        services,
-        RPC_C_AUTHN_WINNT,
-        RPC_C_AUTHZ_NONE,
-        nullptr,
-        RPC_C_AUTHN_LEVEL_CALL,
-        RPC_C_IMP_LEVEL_IMPERSONATE,
-        nullptr,
-        EOAC_NONE);
-
-    IEnumWbemClassObject* enumerator = nullptr;
-
-    hr = services->ExecQuery(
+    HRESULT hr = gService->ExecQuery(
         bstr_t("WQL"),
         bstr_t("SELECT * FROM Win32_BaseBoard"),
         WBEM_FLAG_FORWARD_ONLY |
-        WBEM_FLAG_RETURN_IMMEDIATELY,
+            WBEM_FLAG_RETURN_IMMEDIATELY,
         nullptr,
         &enumerator);
 
     if (FAILED(hr))
     {
-        services->Release();
-        locator->Release();
-        CoUninitialize();
+
         return;
     }
 
-    IWbemClassObject* object = nullptr;
+    IWbemClassObject *object = nullptr;
 
     ULONG returned = 0;
 
@@ -99,7 +60,8 @@ static void FillBaseBoard(MotherboardInfo& board)
             WBEM_INFINITE,
             1,
             &object,
-            &returned) == WBEM_S_NO_ERROR)
+            &returned) == WBEM_S_NO_ERROR &&
+        returned > 0)
     {
         VARIANT value;
 
@@ -180,89 +142,38 @@ static void FillBaseBoard(MotherboardInfo& board)
             VariantClear(&value);
         }
 
-        object->Release();
+        if (object)
+        {
+            object->Release();
+            object = nullptr;
+        }
     }
 
-    enumerator->Release();
-    services->Release();
-    locator->Release();
-
-    CoUninitialize();
+    if (enumerator)
+        enumerator->Release();
 }
-static void FillComputerSystemProduct(MotherboardInfo& board)
+static void FillComputerSystemProduct(MotherboardInfo &board)
 {
-    HRESULT hr;
-
-    hr = CoInitializeEx(
-        nullptr,
-        COINIT_MULTITHREADED);
-
-    if (FAILED(hr) && hr != RPC_E_CHANGED_MODE)
+    if (!gService)
         return;
 
-    IWbemLocator* locator = nullptr;
+    IEnumWbemClassObject *enumerator = nullptr;
 
-    hr = CoCreateInstance(
-        CLSID_WbemLocator,
-        nullptr,
-        CLSCTX_INPROC_SERVER,
-        IID_IWbemLocator,
-        (LPVOID*)&locator);
-
-    if (FAILED(hr))
-    {
-        CoUninitialize();
-        return;
-    }
-
-    IWbemServices* services = nullptr;
-
-    hr = locator->ConnectServer(
-        _bstr_t(L"ROOT\\CIMV2"),
-        nullptr,
-        nullptr,
-        nullptr,
-        0,
-        nullptr,
-        nullptr,
-        &services);
-
-    if (FAILED(hr))
-    {
-        locator->Release();
-        CoUninitialize();
-        return;
-    }
-
-    CoSetProxyBlanket(
-        services,
-        RPC_C_AUTHN_WINNT,
-        RPC_C_AUTHZ_NONE,
-        nullptr,
-        RPC_C_AUTHN_LEVEL_CALL,
-        RPC_C_IMP_LEVEL_IMPERSONATE,
-        nullptr,
-        EOAC_NONE);
-
-    IEnumWbemClassObject* enumerator = nullptr;
-
-    hr = services->ExecQuery(
+    HRESULT hr = gService->ExecQuery(
         bstr_t("WQL"),
         bstr_t("SELECT * FROM Win32_ComputerSystemProduct"),
         WBEM_FLAG_FORWARD_ONLY |
-        WBEM_FLAG_RETURN_IMMEDIATELY,
+            WBEM_FLAG_RETURN_IMMEDIATELY,
         nullptr,
         &enumerator);
 
     if (FAILED(hr))
     {
-        services->Release();
-        locator->Release();
-        CoUninitialize();
+
         return;
     }
 
-    IWbemClassObject* object = nullptr;
+    IWbemClassObject *object = nullptr;
 
     ULONG returned = 0;
 
@@ -270,7 +181,8 @@ static void FillComputerSystemProduct(MotherboardInfo& board)
             WBEM_INFINITE,
             1,
             &object,
-            &returned) == WBEM_S_NO_ERROR)
+            &returned) == WBEM_S_NO_ERROR &&
+        returned > 0)
     {
         VARIANT value;
 
@@ -290,238 +202,39 @@ static void FillComputerSystemProduct(MotherboardInfo& board)
             VariantClear(&value);
         }
 
-        if (SUCCEEDED(object->Get(
-                L"SKUNumber",
-                0,
-                &value,
-                nullptr,
-                nullptr)))
+        
+        if (object)
         {
-            if (value.vt == VT_BSTR)
-                board.SKU =
-                    _bstr_t(value.bstrVal);
-
-            VariantClear(&value);
+            object->Release();
+            object = nullptr;
         }
-
-        object->Release();
     }
 
-    enumerator->Release();
-    services->Release();
-    locator->Release();
-
-    CoUninitialize();
+    if (enumerator)
+        enumerator->Release();
 }
 
-static void FillBIOS(MotherboardInfo& board)
+static void FillMemoryArray(MotherboardInfo &board)
 {
-    HRESULT hr;
-
-    hr = CoInitializeEx(
-        nullptr,
-        COINIT_MULTITHREADED);
-
-    if (FAILED(hr) && hr != RPC_E_CHANGED_MODE)
+    if (!gService)
         return;
+    IEnumWbemClassObject *enumerator = nullptr;
 
-    IWbemLocator* locator = nullptr;
-
-    hr = CoCreateInstance(
-        CLSID_WbemLocator,
-        nullptr,
-        CLSCTX_INPROC_SERVER,
-        IID_IWbemLocator,
-        (LPVOID*)&locator);
-
-    if (FAILED(hr))
-    {
-        CoUninitialize();
-        return;
-    }
-
-    IWbemServices* services = nullptr;
-
-    hr = locator->ConnectServer(
-        _bstr_t(L"ROOT\\CIMV2"),
-        nullptr,
-        nullptr,
-        nullptr,
-        0,
-        nullptr,
-        nullptr,
-        &services);
-
-    if (FAILED(hr))
-    {
-        locator->Release();
-        CoUninitialize();
-        return;
-    }
-
-    CoSetProxyBlanket(
-        services,
-        RPC_C_AUTHN_WINNT,
-        RPC_C_AUTHZ_NONE,
-        nullptr,
-        RPC_C_AUTHN_LEVEL_CALL,
-        RPC_C_IMP_LEVEL_IMPERSONATE,
-        nullptr,
-        EOAC_NONE);
-
-    IEnumWbemClassObject* enumerator = nullptr;
-
-    hr = services->ExecQuery(
-        bstr_t("WQL"),
-        bstr_t("SELECT * FROM Win32_BIOS"),
-        WBEM_FLAG_FORWARD_ONLY |
-        WBEM_FLAG_RETURN_IMMEDIATELY,
-        nullptr,
-        &enumerator);
-
-    if (FAILED(hr))
-    {
-        services->Release();
-        locator->Release();
-        CoUninitialize();
-        return;
-    }
-
-    IWbemClassObject* object = nullptr;
-    ULONG returned = 0;
-
-    if (enumerator->Next(
-            WBEM_INFINITE,
-            1,
-            &object,
-            &returned) == WBEM_S_NO_ERROR)
-    {
-        VARIANT value;
-        VariantInit(&value);
-
-        if (SUCCEEDED(object->Get(
-                L"Manufacturer",
-                0,
-                &value,
-                nullptr,
-                nullptr)))
-        {
-            if (value.vt == VT_BSTR)
-                board.BIOSVendor = _bstr_t(value.bstrVal);
-
-            VariantClear(&value);
-        }
-
-        if (SUCCEEDED(object->Get(
-                L"SMBIOSBIOSVersion",
-                0,
-                &value,
-                nullptr,
-                nullptr)))
-        {
-            if (value.vt == VT_BSTR)
-                board.BIOSVersion = _bstr_t(value.bstrVal);
-
-            VariantClear(&value);
-        }
-
-        if (SUCCEEDED(object->Get(
-                L"ReleaseDate",
-                0,
-                &value,
-                nullptr,
-                nullptr)))
-        {
-            if (value.vt == VT_BSTR)
-                board.BIOSReleaseDate = _bstr_t(value.bstrVal);
-
-            VariantClear(&value);
-        }
-
-        object->Release();
-    }
-
-    enumerator->Release();
-    services->Release();
-    locator->Release();
-
-    CoUninitialize();
-}
-
-static void FillMemoryArray(MotherboardInfo& board)
-{
-    HRESULT hr;
-
-    hr = CoInitializeEx(
-        nullptr,
-        COINIT_MULTITHREADED);
-
-    if (FAILED(hr) && hr != RPC_E_CHANGED_MODE)
-        return;
-
-    IWbemLocator* locator = nullptr;
-
-    hr = CoCreateInstance(
-        CLSID_WbemLocator,
-        nullptr,
-        CLSCTX_INPROC_SERVER,
-        IID_IWbemLocator,
-        (LPVOID*)&locator);
-
-    if (FAILED(hr))
-    {
-        CoUninitialize();
-        return;
-    }
-
-    IWbemServices* services = nullptr;
-
-    hr = locator->ConnectServer(
-        _bstr_t(L"ROOT\\CIMV2"),
-        nullptr,
-        nullptr,
-        nullptr,
-        0,
-        nullptr,
-        nullptr,
-        &services);
-
-    if (FAILED(hr))
-    {
-        locator->Release();
-        CoUninitialize();
-        return;
-    }
-
-    CoSetProxyBlanket(
-        services,
-        RPC_C_AUTHN_WINNT,
-        RPC_C_AUTHZ_NONE,
-        nullptr,
-        RPC_C_AUTHN_LEVEL_CALL,
-        RPC_C_IMP_LEVEL_IMPERSONATE,
-        nullptr,
-        EOAC_NONE);
-
-    IEnumWbemClassObject* enumerator = nullptr;
-
-    hr = services->ExecQuery(
+    HRESULT hr = gService->ExecQuery(
         bstr_t("WQL"),
         bstr_t("SELECT * FROM Win32_PhysicalMemoryArray"),
         WBEM_FLAG_FORWARD_ONLY |
-        WBEM_FLAG_RETURN_IMMEDIATELY,
+            WBEM_FLAG_RETURN_IMMEDIATELY,
         nullptr,
         &enumerator);
 
     if (FAILED(hr))
     {
-        services->Release();
-        locator->Release();
-        CoUninitialize();
+
         return;
     }
 
-    IWbemClassObject* object = nullptr;
+    IWbemClassObject *object = nullptr;
 
     ULONG returned = 0;
 
@@ -529,7 +242,8 @@ static void FillMemoryArray(MotherboardInfo& board)
             WBEM_INFINITE,
             1,
             &object,
-            &returned) == WBEM_S_NO_ERROR)
+            &returned) == WBEM_S_NO_ERROR &&
+        returned > 0)
     {
         VARIANT value;
 
@@ -552,22 +266,7 @@ static void FillMemoryArray(MotherboardInfo& board)
             VariantClear(&value);
         }
 
-        if (SUCCEEDED(object->Get(
-                L"MaxCapacity",
-                0,
-                &value,
-                nullptr,
-                nullptr)))
-        {
-            if (value.vt == VT_I4 ||
-                value.vt == VT_UI4)
-            {
-                board.MaximumRAMBytes =
-                    static_cast<uint64_t>(value.uintVal) * 1024;
-            }
-
-            VariantClear(&value);
-        }
+       
 
         if (SUCCEEDED(object->Get(
                 L"MemoryErrorCorrection",
@@ -582,23 +281,34 @@ static void FillMemoryArray(MotherboardInfo& board)
                 uint32_t ecc =
                     value.uintVal;
 
-                board.ECCSupported =
-                    (ecc != 3);
+                switch (ecc)
+                {
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                    board.ECCSupported = true;
+                    break;
+
+                default:
+                    board.ECCSupported = false;
+                    break;
+                }
             }
 
             VariantClear(&value);
         }
 
-        object->Release();
+        if (object)
+        {
+            object->Release();
+            object = nullptr;
+        }
     }
 
-    enumerator->Release();
-    services->Release();
-    locator->Release();
-
-    CoUninitialize();
+    if (enumerator)
+        enumerator->Release();
 }
-
 
 MotherboardInfo GetMotherboardInfo()
 {
@@ -606,7 +316,6 @@ MotherboardInfo GetMotherboardInfo()
 
     FillBaseBoard(board);
     FillComputerSystemProduct(board);
-    FillBIOS(board);
     FillMemoryArray(board);
 
     return board;

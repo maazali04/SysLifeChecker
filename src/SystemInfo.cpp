@@ -13,7 +13,8 @@
 #include "Audio.hpp"     
 #include "Camera.hpp"   
 #include "Drivers.hpp"   
-#include "Chargers.hpp"  
+#include "Chargers.hpp" 
+#include "BIOS.hpp"
  
 SystemInfo GetSystemInfo()
 {
@@ -26,6 +27,7 @@ SystemInfo GetSystemInfo()
     info.Displays = GetDisplayInfo();
     info.Network = GetNetworkInfo();
     info.Motherboard = GetMotherboardInfo();
+    info.BIOS = GetBIOSInfo();
     info.Windows = GetWindowsInfo();
     info.Security = GetSecurityInfo();
     info.Audio = GetAudioInfo();

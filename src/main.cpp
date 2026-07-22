@@ -26,10 +26,12 @@ int main()
     // TestDisplay(pc.Displays);
     // TestWindows(pc.Windows);
     // TestSecurity(pc.Security);
-    TestAudio(pc.Audio);
+    // TestAudio(pc.Audio);
     // TestCamera(pc.Cameras);
     // TestDrivers(pc.Drivers);
     // TestCharger(pc.Chargers);
+    TestMotherBoard(pc.Motherboard);
+    TestBIOS(pc.BIOS);
 
     ShutdownWMI();
 

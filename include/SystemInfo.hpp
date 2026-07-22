@@ -1016,6 +1016,7 @@ struct NetworkInfo
 // ------------------------------------
 // BIOS
 // ------------------------------------
+
 enum class BIOSMode
 {
     Unknown,
@@ -1028,19 +1029,15 @@ struct BIOSInfo
     // ---------- Identity ----------
 
     std::string Vendor;
-    std::string Manufacturer;
     std::string Version;
     std::string ReleaseDate;
-    std::string Description;
-
-    std::string SerialNumber;
     std::string SMBIOSVersion;
+    std::string SerialNumber;
+    std::string Description;
 
     // ---------- Firmware ----------
 
     BIOSMode Mode = BIOSMode::Unknown;
-
-    uint64_t ROMSizeBytes = 0;
 
     bool UEFISupported = false;
     bool UEFIEnabled = false;
@@ -1053,36 +1050,19 @@ struct BIOSInfo
 
     std::string TPMVersion;
 
-    // ---------- Features ----------
+    // ---------- Virtualization ----------
 
     bool VirtualizationSupported = false;
     bool VirtualizationEnabled = false;
 
-    bool FastBootSupported = false;
-    bool FastBootEnabled = false;
+    // ---------- Boot ----------
 
     bool PXEBootSupported = false;
-
-    bool WakeOnLANSupported = false;
-
-    bool WakeOnUSBSupported = false;
-
-    bool BIOSPasswordEnabled = false;
-
-    bool AdminPasswordEnabled = false;
-
-    // ---------- Misc ----------
-
-    std::string CurrentLanguage;
-
-    std::vector<std::string> SupportedLanguages;
-
-    std::string LastUpdateDate;
 };
+// ------------------------------------
+// Motherboard
+// ------------------------------------
 
-// ------------------------------------
-// Motherboard Info
-// ------------------------------------
 enum class MotherboardFormFactor
 {
     Unknown,
@@ -1098,36 +1078,25 @@ enum class MotherboardFormFactor
 
 struct PCIeSlotInfo
 {
-    std::string Name; // PCIEX16_1
-
-    std::string Version; // PCIe 4.0
-
-    uint32_t Lanes = 0; // x16
-
+    std::string Name;
+    std::string Version;
+    uint32_t Lanes = 0;
     bool Occupied = false;
-
-    std::string DeviceInstalled; // RTX 4070
+    std::string DeviceInstalled;
 };
 
 struct M2SlotInfo
 {
-    std::string Name; // M2_1
-
+    std::string Name;
     bool Occupied = false;
-
     std::string DeviceInstalled;
-
-    std::string Interface; // NVMe / SATA
-
-    std::string PCIeVersion; // Gen4 x4
+    std::string Interface;
 };
 
 struct SATAPortInfo
 {
-    std::string Name; // SATA0
-
+    std::string Name;
     bool Connected = false;
-
     std::string DeviceInstalled;
 };
 
@@ -1136,68 +1105,20 @@ struct MotherboardInfo
     // ---------- Identity ----------
 
     std::string Manufacturer;
-
     std::string ProductName;
-
     std::string Model;
-
     std::string Version;
-
     std::string SerialNumber;
-
     std::string AssetTag;
-
-    std::string SKU;
-
     std::string UUID;
 
-    // ---------- Hardware ----------
-
-    MotherboardFormFactor FormFactor = MotherboardFormFactor::Unknown;
-
-    std::string Chipset;
-
-    std::string Socket;
 
     // ---------- Memory ----------
 
     uint32_t RAMSlots = 0;
-
-    uint64_t MaximumRAMBytes = 0;
-
     bool ECCSupported = false;
 
-    // ---------- Expansion ----------
-
-    std::vector<PCIeSlotInfo> PCIeSlots;
-
-    std::vector<M2SlotInfo> M2Slots;
-
-    std::vector<SATAPortInfo> SATAPorts;
-
-    // ---------- Features ----------
-
-    bool TPMHeaderPresent = false;
-
-    bool RGBHeaderPresent = false;
-
-    bool ARGBHeaderPresent = false;
-
-    bool WiFiIntegrated = false;
-
-    bool BluetoothIntegrated = false;
-
-    bool RAIDSupported = false;
-
-    // ---------- Firmware ----------
-
-    std::string BIOSVendor;
-
-    std::string BIOSVersion;
-
-    std::string BIOSReleaseDate;
 };
-
 // ------------------------------------
 // Windows Info
 // ------------------------------------
@@ -1466,20 +1387,10 @@ struct CameraInfo
 
     uint32_t MaxWidth = 0;
     uint32_t MaxHeight = 0;
-
     uint32_t MaxFPS = 0;
 
-    bool BuiltIn = false;
-
     bool Connected = true;
-
     bool Enabled = true;
-
-    bool PrivacyShutter = false;
-
-    bool InfraredCamera = false;
-
-    bool SupportsWindowsHello = false;
 };
 
 struct CameraSystemInfo
@@ -1505,6 +1416,8 @@ struct DriverInfo
     std::string INFFile;
 
     bool DigitallySigned = false;
+
+    bool DriverPresent = true;
 };
 
 struct DriverSystemInfo
@@ -1564,6 +1477,7 @@ struct SystemInfo
     DisplaySystemInfo Displays;
     NetworkInfo Network;
     MotherboardInfo Motherboard;
+    BIOSInfo BIOS;
     WindowsInfo Windows;
     SecurityInfo Security;
     AudioInfo Audio;
@@ -1582,6 +1496,7 @@ std::vector<BatteryInfo> GetBatteryInfo();
 DisplaySystemInfo GetDisplayInfo();
 NetworkInfo GetNetworkInfo();
 MotherboardInfo GetMotherboardInfo();
+BIOSInfo GetBIOSInfo();
 WindowsInfo GetWindowsInfo();
 SecurityInfo GetSecurityInfo();
 AudioInfo GetAudioInfo();

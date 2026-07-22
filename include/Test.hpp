@@ -11,7 +11,9 @@
 // void TestDisplay(const DisplaySystemInfo& displays);
 // void TestWindows(const WindowsInfo& windows);
 // void TestSecurity(const SecurityInfo& security);
-void TestAudio(const AudioInfo& audio);
+// void TestAudio(const AudioInfo& audio);
 // void TestCamera(const CameraSystemInfo& cameras);
 // void TestDrivers(const DriverSystemInfo& drivers);
 // void TestCharger(const std::vector<ChargerInfo>& chargers);
+void TestMotherBoard(const MotherboardInfo& board);
+void TestBIOS(const BIOSInfo& bios);

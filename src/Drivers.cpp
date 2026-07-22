@@ -1,13 +1,39 @@
 #include "Drivers.hpp"
 #include "WMIHelper.hpp"
+#include <unordered_set>
 
-static void FillInstalledDrivers(DriverSystemInfo& drivers);
+static void RemoveDuplicateDrivers(DriverSystemInfo& drivers)
+{
+    std::unordered_set<std::string> seen;
+
+    std::vector<DriverInfo> uniqueDrivers;
+
+    for (const auto& driver : drivers.Drivers)
+    {
+        std::string key =
+            driver.DeviceName + "|" +
+            driver.Provider + "|" +
+            driver.Version + "|" +
+            driver.INFFile;
+
+        if (seen.insert(key).second)
+        {
+            uniqueDrivers.push_back(driver);
+        }
+    }
+
+    drivers.Drivers = std::move(uniqueDrivers);
+}
+
+static void FillInstalledDrivers(DriverSystemInfo &drivers);
 
 DriverSystemInfo GetDriverInfo()
 {
     DriverSystemInfo drivers;
 
     FillInstalledDrivers(drivers);
+    RemoveDuplicateDrivers(drivers);
+
 
     drivers.TotalDrivers =
         static_cast<uint32_t>(drivers.Drivers.size());
@@ -15,22 +41,22 @@ DriverSystemInfo GetDriverInfo()
     return drivers;
 }
 
-static void FillInstalledDrivers(DriverSystemInfo& drivers)
+static void FillInstalledDrivers(DriverSystemInfo &drivers)
 {
-    IEnumWbemClassObject* enumerator = nullptr;
+    IEnumWbemClassObject *enumerator = nullptr;
 
     HRESULT hr = gService->ExecQuery(
         bstr_t("WQL"),
         bstr_t("SELECT * FROM Win32_PnPSignedDriver"),
         WBEM_FLAG_FORWARD_ONLY |
-        WBEM_FLAG_RETURN_IMMEDIATELY,
+            WBEM_FLAG_RETURN_IMMEDIATELY,
         nullptr,
         &enumerator);
 
     if (FAILED(hr))
         return;
 
-    IWbemClassObject* object = nullptr;
+    IWbemClassObject *object = nullptr;
     ULONG returned = 0;
 
     while (enumerator->Next(
@@ -110,10 +136,12 @@ static void FillInstalledDrivers(DriverSystemInfo& drivers)
             L"IsSigned",
             driver.DigitallySigned);
 
+        driver.DriverPresent = !driver.DeviceName.empty();
+
         if (!driver.DeviceName.empty())
-{
-    drivers.Drivers.push_back(driver);
-}
+        {
+            drivers.Drivers.push_back(driver);
+        }
 
         object->Release();
     }
