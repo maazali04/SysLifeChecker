@@ -26,10 +26,12 @@ wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     wxPanel *content = new wxPanel(root);
     content->SetBackgroundColour(*wxWHITE);
 
-    sizer->Add(sidebar, 0, wxEXPAND);
+    sizer->Add(sidebar, 0, wxEXPAND | wxALL, 0);
     sizer->Add(content, 1, wxEXPAND);
 
     root->SetSizer(sizer);
+    root->Layout();
+Layout();
 
     Centre();
 }

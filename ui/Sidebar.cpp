@@ -1,87 +1,180 @@
 #include "Sidebar.hpp"
+#include "controls/SidebarItem.hpp"
+#include <wx/statline.h>
+#include <ctime>
 
-Sidebar::Sidebar(wxWindow* parent)
+Sidebar::Sidebar(wxWindow *parent)
     : wxPanel(parent,
               wxID_ANY,
               wxDefaultPosition,
               wxSize(220, -1))
 {
-    SetBackgroundColour(wxColour(245,245,245));
+    SetBackgroundColour(*wxWHITE);
 
-    wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *mainSizer = new wxBoxSizer(wxVERTICAL);
 
-    //------------------------
-    // Logo
-    //------------------------
+    //==========================
+    // Logo + Title
+    //==========================
 
-    wxBitmap logo("resources/icons/SysLifeChecker.png",
-                  wxBITMAP_TYPE_PNG);
+    wxBoxSizer *headerSizer = new wxBoxSizer(wxHORIZONTAL);
+
+    wxBitmap logo(
+        "resources/icons/SysLifeChecker_28.png",
+        wxBITMAP_TYPE_PNG);
 
     if (logo.IsOk())
     {
-        m_Logo = new wxStaticBitmap(this,
-                                    wxID_ANY,
-                                    logo);
+        m_Logo = new wxStaticBitmap(
+            this,
+            wxID_ANY,
+            logo);
 
-        mainSizer->Add(m_Logo,
-                       0,
-                       wxALIGN_CENTER | wxTOP,
-                       20);
+        headerSizer->Add(
+            m_Logo,
+            0,
+            wxALIGN_CENTER_VERTICAL);
     }
 
-    //------------------------
-    // Title
-    //------------------------
+    m_Title = new wxStaticText(
+        this,
+        wxID_ANY,
+        "SysLifeChecker");
 
-    m_Title = new wxStaticText(this,
-                               wxID_ANY,
-                               "SysLifeChecker");
+    m_Title->SetFont(
+        wxFontInfo(11).Bold());
 
-    wxFont font(
-        13,
-        wxFONTFAMILY_DEFAULT,
-        wxFONTSTYLE_NORMAL,
-        wxFONTWEIGHT_BOLD);
-
-    m_Title->SetFont(font);
-
-    mainSizer->Add(
+    //  increase size between logo and text
+    headerSizer->Add(
         m_Title,
         0,
-        wxALIGN_CENTER | wxTOP,
-        10);
+        wxLEFT | wxALIGN_CENTER_VERTICAL,
+        14);
 
-    mainSizer->AddSpacer(30);
+    mainSizer->Add(
+        headerSizer,
+        0,
+        wxLEFT | wxTOP,
+        18);
+    mainSizer->AddSpacer(25);
+
+    wxStaticLine *line = new wxStaticLine(this);
+
+    mainSizer->Add(
+        line,
+        0,
+        wxEXPAND | wxLEFT | wxRIGHT,
+        12);
+
+    mainSizer->AddSpacer(25);
 
     //------------------------
-    // Buttons
+    // Navigation
     //------------------------
 
-    m_Dashboard = new wxButton(this, wxID_ANY, "Dashboard");
-    m_Test      = new wxButton(this, wxID_ANY, "Test");
-    m_Report    = new wxButton(this, wxID_ANY, "Report");
-    m_Settings  = new wxButton(this, wxID_ANY, "Settings");
+    m_Dashboard = new SidebarItem(
+        this,
+        "Dashboard",
+        "resources/icons/sidebar/dashboard_black.png",
+        "resources/icons/sidebar/dashboard_blue.png");
+    m_Test = new SidebarItem(
+        this,
+        "Test",
+        "resources/icons/sidebar/test_black.png",
+        "resources/icons/sidebar/test_blue.png");
 
-    wxButton* buttons[]
-    {
-        m_Dashboard,
-        m_Test,
-        m_Report,
-        m_Settings
-    };
+    m_Report = new SidebarItem(
+        this,
+        "Report",
+        "resources/icons/sidebar/report_black.png",
+        "resources/icons/sidebar/report_blue.png");
 
-    for (auto button : buttons)
-    {
-        button->SetMinSize(wxSize(180,40));
+    m_Settings = new SidebarItem(
+        this,
+        "Settings",
+        "resources/icons/sidebar/settings_black.png",
+        "resources/icons/sidebar/settings_blue.png");
 
-        mainSizer->Add(
-            button,
-            0,
-            wxLEFT | wxRIGHT | wxBOTTOM | wxEXPAND,
-            15);
-    }
+    //  Select Dashboard initially
+    m_Dashboard->SetClickHandler([this]()
+                                 { SelectItem(m_Dashboard); });
+
+    m_Test->SetClickHandler([this]()
+                            { SelectItem(m_Test); });
+
+    m_Report->SetClickHandler([this]()
+                              { SelectItem(m_Report); });
+
+    m_Settings->SetClickHandler([this]()
+                                { SelectItem(m_Settings); });
+
+    SelectItem(m_Dashboard);
+    mainSizer->Add(m_Dashboard, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 12);
+    mainSizer->Add(m_Test, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 12);
+    mainSizer->Add(m_Report, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 12);
+    mainSizer->AddSpacer(8);
+
+    wxStaticLine *line2 = new wxStaticLine(this);
+
+    mainSizer->Add(line2,
+                   0,
+                   wxEXPAND | wxLEFT | wxRIGHT,
+                   12);
+
+    mainSizer->AddSpacer(12);
+    mainSizer->Add(m_Settings, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 12);
+
+    std::time_t now = std::time(nullptr);
+    std::tm *t = std::localtime(&now);
+
+    int year = 1900 + t->tm_year;
+
+wxString text;
+text.Printf(L"\u00A9 %d SysLifeChecker", year);
+
+wxStaticText* copyright =
+    new wxStaticText(
+        this,
+        wxID_ANY,
+        text);
+        
+    copyright->SetFont(
+        wxFontInfo(8));
+    copyright->SetForegroundColour(
+        wxColour(140, 140, 140));
 
     mainSizer->AddStretchSpacer();
 
+    mainSizer->Add(
+        copyright,
+        0,
+        wxALIGN_CENTER | wxBOTTOM,
+        14);
+
     SetSizer(mainSizer);
+    Bind(wxEVT_PAINT,
+         &Sidebar::OnPaint,
+         this);
+}
+
+void Sidebar::OnPaint(wxPaintEvent &)
+{
+    wxPaintDC dc(this);
+
+    dc.SetPen(wxPen(wxColour(225, 225, 225), 1));
+
+    int w, h;
+    GetSize(&w, &h);
+
+    dc.DrawLine(w - 1, 0, w - 1, h);
+}
+
+void Sidebar::SelectItem(SidebarItem *item)
+{
+    m_Dashboard->SetSelected(false);
+    m_Test->SetSelected(false);
+    m_Report->SetSelected(false);
+    m_Settings->SetSelected(false);
+
+    item->SetSelected(true);
 }

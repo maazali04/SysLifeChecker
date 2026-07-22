@@ -2,7 +2,7 @@
 
 cd "$(dirname "$0")"
 
-g++ ui/*.cpp  \
+g++ ui/*.cpp ui/controls/*.cpp \
     -Iui \
     -Iui/controls \
     $(wx-config --cxxflags) \
