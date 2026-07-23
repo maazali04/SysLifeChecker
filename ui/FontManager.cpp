@@ -1,23 +1,23 @@
 #include "FontManager.hpp"
 
 #include <wx/font.h>
-#include <wx/filename.h>
 
 bool FontManager::m_Initialized = false;
 
-std::string FontManager::m_FontFolder = "resources/fonts/";
+const std::string FontManager::FontFolder =
+    "resources/fonts/";
 
-std::string FontManager::RegularPath =
-    m_FontFolder + "Inter-Regular.ttf";
+const std::string FontManager::RegularPath =
+    FontFolder + "Inter-Regular.ttf";
 
-std::string FontManager::MediumPath =
-    m_FontFolder + "Inter-Medium.ttf";
+const std::string FontManager::MediumPath =
+    FontFolder + "Inter-Medium.ttf";
 
-std::string FontManager::SemiBoldPath =
-    m_FontFolder + "Inter-SemiBold.ttf";
+const std::string FontManager::SemiBoldPath =
+    FontFolder + "Inter-SemiBold.ttf";
 
-std::string FontManager::BoldPath =
-    m_FontFolder + "Inter-Bold.ttf";
+const std::string FontManager::BoldPath =
+    FontFolder + "Inter-Bold.ttf";
 
 bool FontManager::Initialize()
 {
@@ -46,7 +46,7 @@ wxFont FontManager::Regular(int size)
         wxFONTSTYLE_NORMAL,
         wxFONTWEIGHT_NORMAL,
         false,
-        "Inter");
+        FontFamily);
 }
 
 wxFont FontManager::Medium(int size)
@@ -57,7 +57,7 @@ wxFont FontManager::Medium(int size)
         wxFONTSTYLE_NORMAL,
         wxFONTWEIGHT_MEDIUM,
         false,
-        "Inter");
+        FontFamily);
 }
 
 wxFont FontManager::SemiBold(int size)
@@ -68,7 +68,7 @@ wxFont FontManager::SemiBold(int size)
         wxFONTSTYLE_NORMAL,
         wxFONTWEIGHT_SEMIBOLD,
         false,
-        "Inter");
+        FontFamily);
 }
 
 wxFont FontManager::Bold(int size)
@@ -79,5 +79,5 @@ wxFont FontManager::Bold(int size)
         wxFONTSTYLE_NORMAL,
         wxFONTWEIGHT_BOLD,
         false,
-        "Inter");
+        FontFamily);
 }

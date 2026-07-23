@@ -22,12 +22,13 @@ public:
     void SetClickHandler(std::function<void()> handler);
 
 private:
-    void OnMouseMove(wxMouseEvent& event);
-void OnMouseLeave(wxMouseEvent& event);
+    void OnMouseMove(wxMouseEvent &event);
+    void OnMouseLeave(wxMouseEvent &event);
     void OnClick(wxMouseEvent &event);
     std::function<void()> m_ClickHandler;
 
     wxStaticText *m_Text = nullptr;
 
     bool m_Selected = false;
+    bool m_Hovered = false;
 };

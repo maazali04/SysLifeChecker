@@ -18,10 +18,12 @@ private:
 
     static bool m_Initialized;
 
-    static std::string m_FontFolder;
+    static constexpr const char* FontFamily = "Inter";
 
-    static std::string RegularPath;
-    static std::string MediumPath;
-    static std::string SemiBoldPath;
-    static std::string BoldPath;
+    static const std::string FontFolder;
+
+    static const std::string RegularPath;
+    static const std::string MediumPath;
+    static const std::string SemiBoldPath;
+    static const std::string BoldPath;
 };

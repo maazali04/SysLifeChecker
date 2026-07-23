@@ -1,4 +1,5 @@
 #include "Sidebar.hpp"
+#include "FontManager.hpp"
 #include "controls/SidebarItem.hpp"
 #include <wx/statline.h>
 #include <ctime>
@@ -41,8 +42,7 @@ Sidebar::Sidebar(wxWindow *parent)
         wxID_ANY,
         "SysLifeChecker");
 
-    m_Title->SetFont(
-        wxFontInfo(11).Bold());
+    m_Title->SetFont(FontManager::Bold(13));
 
     //  increase size between logo and text
     headerSizer->Add(
@@ -50,6 +50,7 @@ Sidebar::Sidebar(wxWindow *parent)
         0,
         wxLEFT | wxALIGN_CENTER_VERTICAL,
         14);
+        
 
     mainSizer->Add(
         headerSizer,
@@ -59,6 +60,7 @@ Sidebar::Sidebar(wxWindow *parent)
     mainSizer->AddSpacer(25);
 
     wxStaticLine *line = new wxStaticLine(this);
+    line->SetForegroundColour(wxColour(235, 235, 235));
 
     mainSizer->Add(
         line,
@@ -121,7 +123,7 @@ Sidebar::Sidebar(wxWindow *parent)
                    wxEXPAND | wxLEFT | wxRIGHT,
                    12);
 
-    mainSizer->AddSpacer(12);
+    mainSizer->AddSpacer(8);
     mainSizer->Add(m_Settings, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 12);
 
     std::time_t now = std::time(nullptr);
@@ -129,19 +131,18 @@ Sidebar::Sidebar(wxWindow *parent)
 
     int year = 1900 + t->tm_year;
 
-wxString text;
-text.Printf(L"\u00A9 %d SysLifeChecker", year);
+    wxString text;
+    text.Printf(L"\u00A9 %d SysLifeChecker", year);
 
-wxStaticText* copyright =
-    new wxStaticText(
-        this,
-        wxID_ANY,
-        text);
-        
-    copyright->SetFont(
-        wxFontInfo(8));
+    wxStaticText *copyright =
+        new wxStaticText(
+            this,
+            wxID_ANY,
+            text);
+
+    copyright->SetFont(FontManager::Regular(8));
     copyright->SetForegroundColour(
-        wxColour(140, 140, 140));
+        wxColour(160, 160, 160));
 
     mainSizer->AddStretchSpacer();
 
@@ -161,7 +162,7 @@ void Sidebar::OnPaint(wxPaintEvent &)
 {
     wxPaintDC dc(this);
 
-    dc.SetPen(wxPen(wxColour(225, 225, 225), 1));
+    dc.SetPen(wxPen(wxColour(232, 232, 232), 1));
 
     int w, h;
     GetSize(&w, &h);
