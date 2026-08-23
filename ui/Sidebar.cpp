@@ -2,13 +2,15 @@
 #include "FontManager.hpp"
 #include "controls/SidebarItem.hpp"
 #include <wx/statline.h>
+#include <wx/dcbuffer.h>
 #include <ctime>
 
-Sidebar::Sidebar(wxWindow *parent)
+Sidebar::Sidebar(wxWindow *parent, std::function<void(int)> onNavigate)
     : wxPanel(parent,
               wxID_ANY,
               wxDefaultPosition,
-              wxSize(220, -1))
+              wxSize(220, -1)),
+      m_OnNavigate(std::move(onNavigate))
 {
     SetBackgroundColour(*wxWHITE);
 
@@ -50,7 +52,6 @@ Sidebar::Sidebar(wxWindow *parent)
         0,
         wxLEFT | wxALIGN_CENTER_VERTICAL,
         14);
-        
 
     mainSizer->Add(
         headerSizer,
@@ -60,7 +61,7 @@ Sidebar::Sidebar(wxWindow *parent)
     mainSizer->AddSpacer(25);
 
     wxStaticLine *line = new wxStaticLine(this);
-    line->SetForegroundColour(wxColour(235, 235, 235));
+    line->SetForegroundColour(wxColour(45,45,45));
 
     mainSizer->Add(
         line,
@@ -99,18 +100,18 @@ Sidebar::Sidebar(wxWindow *parent)
 
     //  Select Dashboard initially
     m_Dashboard->SetClickHandler([this]()
-                                 { SelectItem(m_Dashboard); });
+                                 { SelectItem(m_Dashboard, 0); });
 
     m_Test->SetClickHandler([this]()
-                            { SelectItem(m_Test); });
+                            { SelectItem(m_Test, 1); });
 
     m_Report->SetClickHandler([this]()
-                              { SelectItem(m_Report); });
+                              { SelectItem(m_Report, 2); });
 
     m_Settings->SetClickHandler([this]()
-                                { SelectItem(m_Settings); });
+                                { SelectItem(m_Settings, 3); });
 
-    SelectItem(m_Dashboard);
+    SelectItem(m_Dashboard, 0);
     mainSizer->Add(m_Dashboard, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 12);
     mainSizer->Add(m_Test, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 12);
     mainSizer->Add(m_Report, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 12);
@@ -142,7 +143,7 @@ Sidebar::Sidebar(wxWindow *parent)
 
     copyright->SetFont(FontManager::Regular(8));
     copyright->SetForegroundColour(
-        wxColour(160, 160, 160));
+        wxColour(45,45,45));
 
     mainSizer->AddStretchSpacer();
 
@@ -156,21 +157,31 @@ Sidebar::Sidebar(wxWindow *parent)
     Bind(wxEVT_PAINT,
          &Sidebar::OnPaint,
          this);
+    Bind(wxEVT_SIZE, &Sidebar::OnSize, this);
 }
 
-void Sidebar::OnPaint(wxPaintEvent &)
+void Sidebar::OnSize(wxSizeEvent& event)
 {
-    wxPaintDC dc(this);
+    Refresh(false);
 
-    dc.SetPen(wxPen(wxColour(232, 232, 232), 1));
+    event.Skip();
+}
+
+void Sidebar::OnPaint(wxPaintEvent&)
+{
+    wxBufferedPaintDC dc(this);
+
+    dc.SetBackground(wxBrush(GetBackgroundColour()));
+    dc.Clear();
+
+    dc.SetPen(wxPen(wxColour(235,235,235),1));
 
     int w, h;
-    GetSize(&w, &h);
+    GetClientSize(&w, &h);
 
     dc.DrawLine(w - 1, 0, w - 1, h);
 }
-
-void Sidebar::SelectItem(SidebarItem *item)
+void Sidebar::SelectItem(SidebarItem *item, int pageIndex)
 {
     m_Dashboard->SetSelected(false);
     m_Test->SetSelected(false);
@@ -178,4 +189,7 @@ void Sidebar::SelectItem(SidebarItem *item)
     m_Settings->SetSelected(false);
 
     item->SetSelected(true);
+
+    if (m_OnNavigate)
+        m_OnNavigate(pageIndex);
 }

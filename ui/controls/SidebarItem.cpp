@@ -49,6 +49,8 @@ SidebarItem::SidebarItem(
     sizer->AddStretchSpacer();
 
     SetSizer(sizer);
+    m_Text->SetBackgroundStyle(wxBG_STYLE_COLOUR);
+m_Icon->SetBackgroundStyle(wxBG_STYLE_COLOUR);
 
     auto hand = wxCursor(wxCURSOR_HAND);
 
@@ -74,50 +76,85 @@ void SidebarItem::SetSelected(bool selected)
 {
     m_Selected = selected;
 
-    if(selected)
+    wxColour bg;
+
+    if (selected)
     {
-        SetBackgroundColour(wxColour(242,245,250));
+        bg = wxColour(242,245,250);
+
         m_Text->SetForegroundColour(wxColour(0,120,215));
         m_Icon->SetBitmap(m_BlueBitmap);
     }
     else
     {
-        SetBackgroundColour(*wxWHITE);
+        bg = *wxWHITE;
+
         m_Text->SetForegroundColour(wxColour(45,45,45));
         m_Icon->SetBitmap(m_BlackBitmap);
     }
 
+    SetBackgroundColour(bg);
+    m_Text->SetBackgroundColour(bg);
+    m_Icon->SetBackgroundColour(bg);
+
     Refresh();
+    m_Text->Refresh();
+    m_Icon->Refresh();
 }
 
 void SidebarItem::OnMouseMove(wxMouseEvent& event)
 {
-    if(!m_Selected)
+    if (m_Selected)
     {
-        SetBackgroundColour(wxColour(242,245,250));
-        m_Text->SetForegroundColour(wxColour(0,120,215));
-        m_Icon->SetBitmap(m_BlueBitmap);
-
-        Refresh();
+        event.Skip();
+        return;
     }
+
+    wxColour bg(242,245,250);
+
+    SetBackgroundColour(bg);
+    m_Text->SetBackgroundColour(bg);
+    m_Icon->SetBackgroundColour(bg);
+
+    m_Text->SetForegroundColour(wxColour(0,120,215));
+    m_Icon->SetBitmap(m_BlueBitmap);
+
+    Refresh();
+    Update();
 
     event.Skip();
 }
 
 void SidebarItem::OnMouseLeave(wxMouseEvent& event)
 {
-    if(!m_Selected)
+    if (m_Selected)
     {
-        SetBackgroundColour(*wxWHITE);
-        m_Text->SetForegroundColour(wxColour(45,45,45));
-        m_Icon->SetBitmap(m_BlackBitmap);
-
-        Refresh();
+        event.Skip();
+        return;
     }
+
+    wxPoint mouse = ScreenToClient(wxGetMousePosition());
+
+    if (GetClientRect().Contains(mouse))
+    {
+        event.Skip();
+        return;
+    }
+
+    wxColour bg = *wxWHITE;
+
+    SetBackgroundColour(bg);
+    m_Text->SetBackgroundColour(bg);
+    m_Icon->SetBackgroundColour(bg);
+
+    m_Text->SetForegroundColour(wxColour(45,45,45));
+    m_Icon->SetBitmap(m_BlackBitmap);
+
+    Refresh();
+    Update();
 
     event.Skip();
 }
-
 void SidebarItem::OnClick(wxMouseEvent& event)
 {
     if(m_ClickHandler)
