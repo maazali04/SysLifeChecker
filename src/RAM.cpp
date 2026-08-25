@@ -70,7 +70,11 @@ static void FillOverallRAMInfo(RAMInfo &ram)
         (static_cast<double>(ram.UsedMemoryBytes) * 100.0) /
         static_cast<double>(ram.TotalCapacityBytes);
 
-    // Virtual Memory
+    // NOTE: ullTotalVirtual/ullAvailVirtual describe the per-process
+    // virtual address space (~128 TB on 64-bit Windows), NOT the
+    // pagefile. That mismatch is what produced the "131072.00 GB"
+    // bug. FillRuntimeMemoryInfo() below overwrites these two fields
+    // with the real RAM+pagefile commit limit from GetPerformanceInfo().
     ram.TotalVirtualMemoryBytes = memoryStatus.ullTotalVirtual;
     ram.AvailableVirtualMemoryBytes = memoryStatus.ullAvailVirtual;
 
@@ -91,10 +95,30 @@ RAMType ConvertRAMType(uint16_t type)
         return RAMType::DDR2;
     case 24:
         return RAMType::DDR3;
+    case 25:
+        return RAMType::DDR3L;
     case 26:
         return RAMType::DDR4;
+    case 27:
+        return RAMType::LPDDR3;
+    case 28:
+        return RAMType::DDR4X;
+    case 29:
+        return RAMType::LPDDR4;
+    case 30:
+        return RAMType::LPDDR4X;
+    case 31:
+        return RAMType::HBM;
+    case 32:
+        return RAMType::HBM2;
+    case 33:
+        return RAMType::HBM3;
     case 34:
         return RAMType::DDR5;
+    case 35:
+        return RAMType::LPDDR5;
+    case 36:
+        return RAMType::LPDDR5X;
     default:
         return RAMType::Unknown;
     }
@@ -384,6 +408,20 @@ static void FillRuntimeMemoryInfo(RAMInfo &ram)
 
         ram.CachedMemoryBytes =
             static_cast<uint64_t>(perfInfo.SystemCache) * pageSize;
+
+        // "Virtual Memory (Pagefile)" should mean RAM + pagefile capacity,
+        // which is exactly what CommitLimit/CommitTotal represent -- unlike
+        // ullTotalVirtual above, these give sane, real-world GB numbers.
+        uint64_t commitLimitBytes =
+            static_cast<uint64_t>(perfInfo.CommitLimit) * pageSize;
+        uint64_t commitTotalBytes =
+            static_cast<uint64_t>(perfInfo.CommitTotal) * pageSize;
+
+        ram.TotalVirtualMemoryBytes = commitLimitBytes;
+        ram.AvailableVirtualMemoryBytes =
+            (commitLimitBytes > commitTotalBytes)
+                ? (commitLimitBytes - commitTotalBytes)
+                : 0;
     }
 }
 

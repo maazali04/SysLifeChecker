@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <memory> // Required for std::unique_ptr
+#include <algorithm>
 
 #include <winioctl.h>
 #include <initguid.h>
@@ -183,6 +184,9 @@ static void FillBatteryAPIInformation(
 
 if (QueryBatteryStatus(hBattery, tag, status))
 {
+    // NOTE: this comes from the IOCTL, not SYSTEM_POWER_STATUS, so it
+    // does not carry the 255-"unknown" sentinel that FillBatteryStatus()
+    // has to guard against below.
     battery.RemainingCapacitymWh =
         status.Capacity;
 
@@ -409,8 +413,16 @@ static void FillBatteryStatus(std::vector<BatteryInfo> &batteries)
         battery.IsCharging =
             (status.BatteryFlag & 8);
 
-        battery.RemainingCapacityPercent =
-            status.BatteryLifePercent;
+        // BatteryLifePercent is 255 when Windows doesn't know the value
+        // (common right after boot, or on some desktops with a phantom
+        // ACPI battery device). Displaying 255 as "255%" is the bug --
+        // skip the overwrite and keep whatever FillBatteryAPIInformation()
+        // already computed from the real capacity values.
+        if (status.BatteryLifePercent != 255)
+        {
+            battery.RemainingCapacityPercent =
+                status.BatteryLifePercent;
+        }
 
         battery.EstimatedRemainingMinutes =
             (status.BatteryLifeTime == (DWORD)-1)
@@ -428,6 +440,9 @@ static void FillBatteryStatus(std::vector<BatteryInfo> &batteries)
 
 static void FillBatteryHealth(std::vector<BatteryInfo> &batteries)
 {
+    if (!gService)
+        return;
+
     IEnumWbemClassObject *enumerator = nullptr;
 
     HRESULT hr = gService->ExecQuery(
@@ -454,23 +469,23 @@ static void FillBatteryHealth(std::vector<BatteryInfo> &batteries)
     {
         BatteryInfo &battery = batteries[index];
 
-        GetWMIProperty(
-            object,
-            L"DesignVoltage",
-            battery.DesignedVoltagemV);
+        if (battery.DesignedVoltagemV == 0)
+        {
+            GetWMIProperty(
+                object,
+                L"DesignVoltage",
+                battery.DesignedVoltagemV);
+        }
 
-        GetWMIProperty(
-            object,
-            L"EstimatedChargeRemaining",
-            battery.RemainingCapacityPercent);
-
-        battery.HealthPercent = 100.0;
-
-        battery.Healthy = true;
-        battery.ReplaceRecommended = false;
+        if (battery.RemainingCapacityPercent == 0)
+        {
+            GetWMIProperty(
+                object,
+                L"EstimatedChargeRemaining",
+                battery.RemainingCapacityPercent);
+        }
 
         object->Release();
-
         ++index;
     }
 
@@ -479,25 +494,91 @@ static void FillBatteryHealth(std::vector<BatteryInfo> &batteries)
 
 std::vector<BatteryInfo> GetBatteryInfo()
 {
-
     std::vector<BatteryInfo> batteries;
 
     FillBatteryIdentity(batteries);
 
+    if (!batteries.empty())
+    {
+        HANDLE hBattery = OpenBatteryDevice();
+        if (hBattery != INVALID_HANDLE_VALUE)
+        {
+            FillBatteryAPIInformation(hBattery, batteries);
+            CloseHandle(hBattery);
+        }
+
+        FillBatteryStatus(batteries);
+        FillBatteryHealth(batteries);
+
+        for (auto &b : batteries)
+        {
+            if (b.HealthPercent <= 0.0)
+            {
+                if (b.DesignCapacitymWh > 0 && b.FullChargeCapacitymWh > 0)
+                    b.HealthPercent = (b.FullChargeCapacitymWh * 100.0) / b.DesignCapacitymWh;
+                else
+                    b.HealthPercent = 100.0;
+            }
+
+            // Health thresholds: >=50% Healthy (green), 30-49% Attention
+            // (amber, the "else" case in the UI), <30% Replace (red).
+            b.Healthy = (b.HealthPercent >= 50.0);
+            b.ReplaceRecommended = (b.HealthPercent < 30.0 || b.CycleCount > 800);
+        }
+
+        // Some desktops (and a few laptops with ACPI control-method
+        // batteries) report a phantom Win32_Battery entry with no real
+        // capacity or charge data at all. Treat those as "no battery"
+        // instead of showing a bogus percentage for a PC that has none.
+        batteries.erase(
+            std::remove_if(batteries.begin(), batteries.end(),
+                [](const BatteryInfo &b)
+                {
+                    return b.DesignCapacitymWh == 0 &&
+                           b.FullChargeCapacitymWh == 0 &&
+                           b.RemainingCapacityPercent == 0;
+                }),
+            batteries.end());
+    }
+
     if (batteries.empty())
-        return batteries;
+    {
+        // Fallback: no WMI battery at all, or it was a phantom entry
+        // filtered out above. Ask Windows directly whether this machine
+        // is running on AC (desktop) or has a real battery.
+        SYSTEM_POWER_STATUS powerStatus;
+        if (GetSystemPowerStatus(&powerStatus))
+        {
+            BatteryInfo battery;
+            battery.ACConnected = (powerStatus.ACLineStatus == 1);
 
-    HANDLE hBattery = OpenBatteryDevice();
-
-    if (hBattery == INVALID_HANDLE_VALUE)
-        return batteries;
-
-    FillBatteryAPIInformation(hBattery, batteries);
-
-    CloseHandle(hBattery);
-
-    FillBatteryStatus(batteries);
-    FillBatteryHealth(batteries);
+            if (powerStatus.BatteryFlag != 128 && powerStatus.BatteryFlag != 255)
+            {
+                // Battery is physically present
+                battery.IsBatteryPresent = true;
+                battery.Name = "System Battery";
+                battery.RemainingCapacityPercent =
+                    (powerStatus.BatteryLifePercent == 255) ? 0 : powerStatus.BatteryLifePercent;
+                battery.IsCharging = (powerStatus.BatteryFlag & 8) != 0;
+                battery.Status = battery.IsCharging ? BatteryStatus::Charging :
+                                 (battery.ACConnected ? BatteryStatus::FullyCharged : BatteryStatus::Discharging);
+                battery.HealthPercent = 100.0;
+                battery.Healthy = true;
+                batteries.push_back(battery);
+            }
+            else
+            {
+                // Desktop PC: no battery at all -- report it plainly as
+                // "none" rather than inventing a fake percentage.
+                battery.IsBatteryPresent = false;
+                battery.Name = "Desktop AC Power";
+                battery.Status = BatteryStatus::ACConnected;
+                battery.HealthPercent = 100.0;
+                battery.Healthy = true;
+                batteries.push_back(battery);
+            }
+        }
+    }
 
     return batteries;
 }

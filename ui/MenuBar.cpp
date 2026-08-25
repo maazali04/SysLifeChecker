@@ -5,81 +5,40 @@ wxMenuBar* MenuBar::Create()
     wxMenuBar* menuBar = new wxMenuBar();
 
     // ================= FILE =================
-
     wxMenu* fileMenu = new wxMenu();
-
-    fileMenu->Append(wxID_ANY, "New Scan");
-    fileMenu->Append(wxID_ANY, "Open Report...");
-    fileMenu->Append(wxID_ANY, "Save Report...");
+    fileMenu->Append(ID_MENU_NEW_SCAN, "&New Scan\tCtrl+R");
+    fileMenu->Append(ID_MENU_SAVE_REPORT, "&Save / Export Report...\tCtrl+S");
 
     wxMenu* exportMenu = new wxMenu();
-    exportMenu->Append(wxID_ANY, "PDF");
-    exportMenu->Append(wxID_ANY, "HTML");
-    exportMenu->Append(wxID_ANY, "JSON");
-
+    exportMenu->Append(ID_MENU_EXPORT_HTML, "HTML Report (.html)");
+    exportMenu->Append(ID_MENU_EXPORT_JSON, "JSON Data (.json)");
+    exportMenu->Append(ID_MENU_SAVE_REPORT, "Text Summary (.txt)");
     fileMenu->AppendSubMenu(exportMenu, "Export");
 
     fileMenu->AppendSeparator();
-
-    fileMenu->Append(wxID_EXIT, "Exit");
+    fileMenu->Append(wxID_EXIT, "E&xit\tAlt+F4");
 
     // ================= VIEW =================
-
     wxMenu* viewMenu = new wxMenu();
-
-    viewMenu->Append(wxID_ANY, "Dashboard");
-    viewMenu->Append(wxID_ANY, "Test");
-    viewMenu->Append(wxID_ANY, "Report");
-
+    viewMenu->Append(ID_MENU_VIEW_DASHBOARD, "&Dashboard\tCtrl+1");
+    viewMenu->Append(ID_MENU_VIEW_TEST, "&Hardware Tests\tCtrl+2");
+    viewMenu->Append(ID_MENU_VIEW_REPORT, "&Full Report\tCtrl+3");
+    viewMenu->Append(ID_MENU_VIEW_SETTINGS, "&Settings\tCtrl+4");
     viewMenu->AppendSeparator();
-
-    viewMenu->Append(wxID_ANY, "Refresh");
-    viewMenu->Append(wxID_ANY, "Reset Layout");
-    viewMenu->AppendCheckItem(wxID_ANY, "Fullscreen");
+    viewMenu->Append(ID_MENU_NEW_SCAN, "&Refresh Hardware Data\tF5");
 
     // ================= TEST =================
-
     wxMenu* testMenu = new wxMenu();
-
-    testMenu->Append(wxID_ANY, "Run All Tests");
-    testMenu->Append(wxID_ANY, "Run Selected Tests");
-    testMenu->Append(wxID_ANY, "Stop Testing");
-
-    testMenu->AppendSeparator();
-
-    testMenu->Append(wxID_ANY, "Battery Test");
-    testMenu->Append(wxID_ANY, "CPU Test");
-    testMenu->Append(wxID_ANY, "RAM Test");
-    testMenu->Append(wxID_ANY, "SSD Test");
-    testMenu->Append(wxID_ANY, "GPU Test");
-
-    // ================= TOOLS =================
-
-    wxMenu* toolsMenu = new wxMenu();
-
-    toolsMenu->Append(wxID_PREFERENCES, "Settings");
-    toolsMenu->Append(wxID_ANY, "Language");
-    toolsMenu->Append(wxID_ANY, "Theme");
-    toolsMenu->Append(wxID_ANY, "Logs");
-    toolsMenu->Append(wxID_ANY, "Developer Mode");
+    testMenu->Append(ID_MENU_RUN_ALL_TESTS, "&Run All Diagnostics\tF6");
 
     // ================= HELP =================
-
     wxMenu* helpMenu = new wxMenu();
-
-    helpMenu->Append(wxID_ANY, "User Guide");
-    helpMenu->Append(wxID_ANY, "Check for Updates");
-
-    helpMenu->AppendSeparator();
-
-    helpMenu->Append(wxID_ABOUT, "About SysLifeChecker");
+    helpMenu->Append(wxID_ABOUT, "&About SysLifeChecker");
 
     // ================= ADD TO MENU BAR =================
-
     menuBar->Append(fileMenu, "&File");
     menuBar->Append(viewMenu, "&View");
     menuBar->Append(testMenu, "&Test");
-    menuBar->Append(toolsMenu, "&Tools");
     menuBar->Append(helpMenu, "&Help");
 
     return menuBar;

@@ -257,6 +257,17 @@ static void FillAdapters(NetworkInfo &network)
                 break;
             }
         }
+        else
+        {
+            // NetConnectionStatus is NULL for some adapters -- most
+            // commonly a physical Ethernet NIC with no cable plugged in.
+            // Previously this left adapter.Status at its default
+            // (Unknown) even though the adapter clearly has a MAC
+            // address; treat it as Disconnected instead.
+            adapter.Status = adapter.Enabled
+                ? NetworkStatus::Disconnected
+                : NetworkStatus::Disabled;
+        }
 
         //----------------------------------
 

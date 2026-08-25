@@ -1,39 +1,42 @@
 @echo off
-:: Navigate to the source folder
-cd src
+setlocal
+cd /d "%~dp0"
 
-:: Compile all source files with the correct include paths
-g++ *.cpp ^
--I ..\include ^
--lole32 ^
--loleaut32 ^
--lwbemuuid ^
--lpsapi ^
--lsetupapi ^
--lcfgmgr32 ^
--lmf ^
--lmfplat ^
--lmfreadwrite ^
--lmfuuid ^
--ldxgi ^
--lpdh ^
--liphlpapi ^
--lwlanapi ^
--lbthprops ^
--lgdi32 ^
--lwininet ^
--lhid ^
--luuid ^
--o SysLifeChecker.exe
+echo [BUILD] Compiling SysLifeChecker CLI Diagnostic Tool...
 
-
-:: Check if the compilation succeeded before running
-if %errorlevel% equ 0 (
-    echo [SUCCESS] Compilation finished. Starting program...
-    .\SysLifeChecker.exe
-) else (
-    echo [ERROR] Compilation failed! Please check the errors above.
+if exist "C:\msys64\ucrt64\bin\g++.exe" (
+    set "PATH=C:\msys64\ucrt64\bin;C:\msys64\usr\bin;%PATH%"
 )
 
-:: Pause the window so it doesn't close instantly if there is an error
+g++ src/*.cpp ^
+    -Iinclude ^
+    -Isrc ^
+    -lole32 ^
+    -loleaut32 ^
+    -lwbemuuid ^
+    -lpsapi ^
+    -lsetupapi ^
+    -lcfgmgr32 ^
+    -lmf ^
+    -lmfplat ^
+    -lmfreadwrite ^
+    -lmfuuid ^
+    -ldxgi ^
+    -lpdh ^
+    -liphlpapi ^
+    -lwlanapi ^
+    -lbthprops ^
+    -lgdi32 ^
+    -lwininet ^
+    -lhid ^
+    -luuid ^
+    -o SysLifeChecker_CLI.exe
+
+if %errorlevel% equ 0 (
+    echo [SUCCESS] SysLifeChecker_CLI.exe built successfully!
+    .\SysLifeChecker_CLI.exe
+) else (
+    echo [ERROR] Compilation failed!
+)
+
 pause

@@ -193,3 +193,11 @@ void Sidebar::SelectItem(SidebarItem *item, int pageIndex)
     if (m_OnNavigate)
         m_OnNavigate(pageIndex);
 }
+
+void Sidebar::SelectPage(int pageIndex)
+{
+    if (pageIndex == 0 && m_Dashboard) SelectItem(m_Dashboard, 0);
+    else if (pageIndex == 1 && m_Test) SelectItem(m_Test, 1);
+    else if (pageIndex == 2 && m_Report) SelectItem(m_Report, 2);
+    else if (pageIndex == 3 && m_Settings) SelectItem(m_Settings, 3);
+}

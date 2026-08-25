@@ -7,6 +7,7 @@
 #include <thread>
 #include <intrin.h>
 #include <vector>
+#include <algorithm>
 
 static void FillBasicCPUInfo(CPUInfo &cpu)
 {
@@ -501,49 +502,47 @@ static double GetCPUUsage()
 
     FILETIME idleTime, kernelTime, userTime;
 
-    if (!GetSystemTimes(
-            &idleTime,
-            &kernelTime,
-            &userTime))
-    {
+    if (!GetSystemTimes(&idleTime, &kernelTime, &userTime))
         return 0.0;
-    }
 
-    ULARGE_INTEGER idle;
-    ULARGE_INTEGER kernel;
-    ULARGE_INTEGER user;
-
+    ULARGE_INTEGER idle, kernel, user;
     idle.LowPart = idleTime.dwLowDateTime;
     idle.HighPart = idleTime.dwHighDateTime;
-
     kernel.LowPart = kernelTime.dwLowDateTime;
     kernel.HighPart = kernelTime.dwHighDateTime;
-
     user.LowPart = userTime.dwLowDateTime;
     user.HighPart = userTime.dwHighDateTime;
 
-    ULONGLONG idleDiff =
-        idle.QuadPart - lastIdle.QuadPart;
+    if (lastIdle.QuadPart == 0)
+    {
+        lastIdle = idle;
+        lastKernel = kernel;
+        lastUser = user;
+        Sleep(50);
+        if (!GetSystemTimes(&idleTime, &kernelTime, &userTime))
+            return 0.0;
+        idle.LowPart = idleTime.dwLowDateTime;
+        idle.HighPart = idleTime.dwHighDateTime;
+        kernel.LowPart = kernelTime.dwLowDateTime;
+        kernel.HighPart = kernelTime.dwHighDateTime;
+        user.LowPart = userTime.dwLowDateTime;
+        user.HighPart = userTime.dwHighDateTime;
+    }
 
-    ULONGLONG kernelDiff =
-        kernel.QuadPart - lastKernel.QuadPart;
-
-    ULONGLONG userDiff =
-        user.QuadPart - lastUser.QuadPart;
+    ULONGLONG idleDiff = idle.QuadPart - lastIdle.QuadPart;
+    ULONGLONG kernelDiff = kernel.QuadPart - lastKernel.QuadPart;
+    ULONGLONG userDiff = user.QuadPart - lastUser.QuadPart;
 
     lastIdle = idle;
     lastKernel = kernel;
     lastUser = user;
 
-    ULONGLONG total =
-        kernelDiff + userDiff;
-
+    ULONGLONG total = kernelDiff + userDiff;
     if (total == 0)
         return 0.0;
 
-    return ((double)(total - idleDiff) /
-            total) *
-           100.0;
+    double usage = ((double)(total - idleDiff) / (double)total) * 100.0;
+    return std::clamp(usage, 0.0, 100.0);
 }
 
 // Note: Make it complete

@@ -11,6 +11,7 @@ class Sidebar : public wxPanel
 public:
     // Page indices: 0 = Dashboard, 1 = Test, 2 = Report, 3 = Settings
     explicit Sidebar(wxWindow *parent, std::function<void(int)> onNavigate = nullptr);
+    void SelectPage(int pageIndex);
 
 private:
     void OnPaint(wxPaintEvent &event);

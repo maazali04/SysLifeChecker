@@ -7,3 +7,4 @@ const char* NetworkAdapterTypeToString(NetworkAdapterType type);
 const char* NetworkStatusToString(NetworkStatus status);
 
 std::vector<NetworkAdapter> GetNetworkAdapters();
+NetworkInfo GetNetworkInfo();
