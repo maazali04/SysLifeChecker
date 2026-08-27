@@ -13,11 +13,16 @@ public:
     explicit Sidebar(wxWindow *parent, std::function<void(int)> onNavigate = nullptr);
     void SelectPage(int pageIndex);
 
+    // Re-applies the current Theme::IsDark palette to the sidebar itself
+    // and every nav item in it. Called by Theme::ApplyRecursive().
+    void ApplyTheme();
+
 private:
     void OnPaint(wxPaintEvent &event);
     void OnSize(wxSizeEvent& event);
     wxStaticBitmap *m_Logo = nullptr;
     wxStaticText *m_Title = nullptr;
+    wxStaticText *m_Copyright = nullptr;
 
     SidebarItem *m_Dashboard = nullptr;
     SidebarItem *m_Test = nullptr;

@@ -1,5 +1,6 @@
 #include "Sidebar.hpp"
 #include "FontManager.hpp"
+#include "Theme.hpp"
 #include "controls/SidebarItem.hpp"
 #include <wx/statline.h>
 #include <wx/dcbuffer.h>
@@ -12,7 +13,7 @@ Sidebar::Sidebar(wxWindow *parent, std::function<void(int)> onNavigate)
               wxSize(220, -1)),
       m_OnNavigate(std::move(onNavigate))
 {
-    SetBackgroundColour(*wxWHITE);
+    SetBackgroundColour(Theme::SidebarBackground());
 
     wxBoxSizer *mainSizer = new wxBoxSizer(wxVERTICAL);
 
@@ -45,6 +46,7 @@ Sidebar::Sidebar(wxWindow *parent, std::function<void(int)> onNavigate)
         "SysLifeChecker");
 
     m_Title->SetFont(FontManager::Bold(13));
+    m_Title->SetForegroundColour(Theme::SidebarTextColour());
 
     //  increase size between logo and text
     headerSizer->Add(
@@ -142,8 +144,8 @@ Sidebar::Sidebar(wxWindow *parent, std::function<void(int)> onNavigate)
             text);
 
     copyright->SetFont(FontManager::Regular(8));
-    copyright->SetForegroundColour(
-        wxColour(45,45,45));
+    copyright->SetForegroundColour(Theme::SidebarTextColour());
+    m_Copyright = copyright;
 
     mainSizer->AddStretchSpacer();
 
@@ -200,4 +202,22 @@ void Sidebar::SelectPage(int pageIndex)
     else if (pageIndex == 1 && m_Test) SelectItem(m_Test, 1);
     else if (pageIndex == 2 && m_Report) SelectItem(m_Report, 2);
     else if (pageIndex == 3 && m_Settings) SelectItem(m_Settings, 3);
+}
+
+void Sidebar::ApplyTheme()
+{
+    SetBackgroundColour(Theme::SidebarBackground());
+
+    if (m_Title)
+        m_Title->SetForegroundColour(Theme::SidebarTextColour());
+
+    if (m_Copyright)
+        m_Copyright->SetForegroundColour(Theme::SidebarTextColour());
+
+    if (m_Dashboard) m_Dashboard->ApplyTheme();
+    if (m_Test) m_Test->ApplyTheme();
+    if (m_Report) m_Report->ApplyTheme();
+    if (m_Settings) m_Settings->ApplyTheme();
+
+    Refresh();
 }

@@ -484,10 +484,8 @@ void DashboardPanel::UpdateData(const SystemInfo &info)
             warningDrives++;
 
         wxString subText = wxString::Format("Health: %d%% (%s)", healthVal, drive.HealthStatus.empty() ? "Good" : drive.HealthStatus);
-        if (drive.SMART.EstimatedRemainingYears > 0.0)
-            subText += wxString::Format("  \u2022  Est. Lifetime: ~%.1f Years", drive.SMART.EstimatedRemainingYears);
         if (drive.SMART.Temperature > 0.0)
-            subText += wxString::Format("  \u2022  Temp: %.0f \u00B0C", drive.SMART.Temperature);
+            subText += wxString::Format(L"  \u2022  Temp: %.0f \u00B0C", drive.SMART.Temperature);
 
         auto* healthLabel = new wxStaticText(m_StorageCard, wxID_ANY, subText);
         healthLabel->SetFont(FontManager::Medium(9));

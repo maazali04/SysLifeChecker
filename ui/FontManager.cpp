@@ -3,6 +3,7 @@
 #include <wx/font.h>
 
 bool FontManager::m_Initialized = false;
+wxString FontManager::m_ActiveFamily = "Segoe UI";
 
 const std::string FontManager::FontFolder =
     "resources/fonts/";
@@ -24,14 +25,23 @@ bool FontManager::Initialize()
     if (m_Initialized)
         return true;
 
+    bool loaded = true;
+
 #if wxCHECK_VERSION(3,1,6)
-
-    wxFont::AddPrivateFont(RegularPath);
-    wxFont::AddPrivateFont(MediumPath);
-    wxFont::AddPrivateFont(SemiBoldPath);
-    wxFont::AddPrivateFont(BoldPath);
-
+    loaded = loaded && wxFont::AddPrivateFont(RegularPath);
+    loaded = loaded && wxFont::AddPrivateFont(MediumPath);
+    loaded = loaded && wxFont::AddPrivateFont(SemiBoldPath);
+    loaded = loaded && wxFont::AddPrivateFont(BoldPath);
+#else
+    loaded = false;
 #endif
+
+    // "Inter" only actually renders correctly if every weight registered.
+    // If any file is missing/corrupt or this wx build is too old to load
+    // private fonts at all, fall back to Segoe UI -- a clean, genuinely
+    // professional system font -- rather than an unresolved "Inter" that
+    // Windows silently swaps for a default (often ugly) fallback face.
+    m_ActiveFamily = loaded ? wxString("Inter") : wxString("Segoe UI");
 
     m_Initialized = true;
 
@@ -46,7 +56,7 @@ wxFont FontManager::Regular(int size)
         wxFONTSTYLE_NORMAL,
         wxFONTWEIGHT_NORMAL,
         false,
-        FontFamily);
+        m_ActiveFamily);
 }
 
 wxFont FontManager::Medium(int size)
@@ -57,7 +67,7 @@ wxFont FontManager::Medium(int size)
         wxFONTSTYLE_NORMAL,
         wxFONTWEIGHT_MEDIUM,
         false,
-        FontFamily);
+        m_ActiveFamily);
 }
 
 wxFont FontManager::SemiBold(int size)
@@ -68,7 +78,7 @@ wxFont FontManager::SemiBold(int size)
         wxFONTSTYLE_NORMAL,
         wxFONTWEIGHT_SEMIBOLD,
         false,
-        FontFamily);
+        m_ActiveFamily);
 }
 
 wxFont FontManager::Bold(int size)
@@ -79,5 +89,5 @@ wxFont FontManager::Bold(int size)
         wxFONTSTYLE_NORMAL,
         wxFONTWEIGHT_BOLD,
         false,
-        FontFamily);
+        m_ActiveFamily);
 }

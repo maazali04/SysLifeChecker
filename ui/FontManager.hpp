@@ -1,6 +1,7 @@
 #pragma once
 
 #include <wx/font.h>
+#include <wx/string.h>
 #include <string>
 
 class FontManager
@@ -18,7 +19,12 @@ private:
 
     static bool m_Initialized;
 
-    static constexpr const char* FontFamily = "Inter";
+    // Resolved at Initialize() time: "Inter" only if every weight's TTF
+    // actually registered successfully, otherwise "Segoe UI" -- the
+    // native modern Windows UI font -- so a failed/missing font file
+    // never silently degrades into whatever ugly default face Windows
+    // picks for an unresolved family name.
+    static wxString m_ActiveFamily;
 
     static const std::string FontFolder;
 

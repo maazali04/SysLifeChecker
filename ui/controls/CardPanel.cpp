@@ -1,4 +1,5 @@
 #include "CardPanel.hpp"
+#include "../Theme.hpp"
 #include <wx/dcbuffer.h>
 #include <wx/graphics.h>
 
@@ -46,13 +47,13 @@ void CardPanel::OnPaint(wxPaintEvent&)
     wxRect r = GetClientRect();
     r.Deflate(1); // Leave a 1-pixel margin so the stroke outline isn't cut off
 
-    // 3. Draw the solid white card body FILL with rounded corners
+    // 3. Draw the solid card body FILL with rounded corners
     gc->SetPen(*wxTRANSPARENT_PEN); // Turn off the pen for the fill step
-    gc->SetBrush(wxBrush(*wxWHITE));
+    gc->SetBrush(wxBrush(Theme::CardBackground()));
     gc->DrawRoundedRectangle(r.x, r.y, r.width, r.height, 8);
 
     // 4. Draw the subtle border OUTLINE on top of the rounded shape
-    gc->SetPen(wxPen(wxColour(235, 235, 235), 1));
+    gc->SetPen(wxPen(Theme::BorderColour(), 1));
     gc->SetBrush(*wxTRANSPARENT_BRUSH); // Don't overwrite the inside fill
     gc->DrawRoundedRectangle(r.x, r.y, r.width, r.height, 8);
 

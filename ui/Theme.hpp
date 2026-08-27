@@ -2,10 +2,12 @@
 
 #include <wx/colour.h>
 
+class wxWindow;
+
 class Theme
 {
 public:
-    // ===== Main UI =====
+    // ===== Main UI (light mode base values) =====
 
     static const wxColour Background;
     static const wxColour Surface;
@@ -47,4 +49,27 @@ public:
     static constexpr int PaddingSmall = 8;
     static constexpr int PaddingMedium = 16;
     static constexpr int PaddingLarge = 24;
+
+    // ===== Dark mode =====
+    // Real, working light/dark toggle. Rather than requiring every panel
+    // to be rewritten to pull colours from here individually, SetDark() +
+    // ApplyRecursive() walk the actual live window tree and recolor it:
+    // page/card backgrounds always switch, and any label using one of our
+    // existing neutral greys (not a semantic green/amber/red/blue status
+    // colour, which are left alone) switches too.
+    static bool IsDark;
+
+    static wxColour PageBackground();
+    static wxColour CardBackground();
+    static wxColour BorderColour();
+
+    // Sidebar gets its own distinct palette (a grey, not the same shade
+    // as the page background) so it reads as a separate navigation rail
+    // in both light and dark mode.
+    static wxColour SidebarBackground();
+    static wxColour SidebarItemHighlightBackground();
+    static wxColour SidebarTextColour();
+
+    static void SetDark(bool dark);
+    static void ApplyRecursive(wxWindow* window);
 };

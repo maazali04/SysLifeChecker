@@ -29,13 +29,6 @@ private:
     SettingsDialog* m_SettingsPanel = nullptr;
     Sidebar* m_Sidebar = nullptr;
 
-    // Shown in place of the pages above until the first hardware scan
-    // completes, so the app never displays hard-coded placeholder values.
-    wxPanel* m_LoadingPanel = nullptr;
-    wxGauge* m_LoadingGauge = nullptr;
-    wxTimer m_LoadingPulseTimer;
-    bool m_FirstLoadComplete = false;
-
     // Periodic background refresh; interval is controlled from Settings.
     wxTimer m_RefreshTimer;
 
@@ -43,8 +36,6 @@ private:
 
     void OnSystemInfoReady(wxCommandEvent& event);
     void OnRefreshTimer(wxTimerEvent& event);
-    void OnLoadingPulseTimer(wxTimerEvent& event);
-    void OnMenuNewScan(wxCommandEvent& event);
     void OnMenuExportReport(wxCommandEvent& event);
     void OnMenuRunTests(wxCommandEvent& event);
     void OnMenuAbout(wxCommandEvent& event);

@@ -6,6 +6,7 @@
 #include "SettingsDialog.hpp"
 #include "TestPanel.hpp"
 #include "FontManager.hpp"
+#include "Theme.hpp"
 #include <wx/icon.h>
 #include <wx/aboutdlg.h>
 
@@ -14,9 +15,6 @@ wxEND_EVENT_TABLE()
 
 namespace
 {
-    // wxTimer defaults to id wxID_ANY (-1) for both timers, which makes
-    // Bind()'s id filter unable to tell them apart. Give each its own id.
-    constexpr int ID_LOADING_PULSE_TIMER = wxID_HIGHEST + 500;
     constexpr int ID_REFRESH_TIMER = wxID_HIGHEST + 501;
 }
 
@@ -26,7 +24,6 @@ MainFrame::MainFrame()
               "SysLifeChecker - Hardware & Life Monitor",
               wxDefaultPosition,
               wxSize(1240, 740)),
-      m_LoadingPulseTimer(this, ID_LOADING_PULSE_TIMER),
       m_RefreshTimer(this, ID_REFRESH_TIMER)
 {
     SetIcon(wxIcon("resources/icons/SysLifeChecker.ico", wxBITMAP_TYPE_ICO));
@@ -37,32 +34,13 @@ MainFrame::MainFrame()
     wxBoxSizer *sizer = new wxBoxSizer(wxHORIZONTAL);
 
     //--------------------------------------------------
-    // Content area
+    // Content area: all four pages live here, stacked in one sizer,
+    // with only the active one shown. Every page is reachable
+    // immediately -- none of them wait on the background scan, so
+    // Settings/Report/Test are never blocked by a slow first refresh.
     //--------------------------------------------------
     m_ContentContainer = new wxPanel(root);
     wxBoxSizer *contentSizer = new wxBoxSizer(wxVERTICAL);
-
-    // Loading page, shown first while the initial hardware scan runs.
-    m_LoadingPanel = new wxPanel(m_ContentContainer);
-    m_LoadingPanel->SetBackgroundColour(wxColour(245, 247, 250));
-    {
-        wxBoxSizer* loadingSizer = new wxBoxSizer(wxVERTICAL);
-        loadingSizer->AddStretchSpacer();
-
-        auto* label = new wxStaticText(m_LoadingPanel, wxID_ANY, "Scanning your system...");
-        label->SetFont(FontManager::Medium(13));
-        label->SetForegroundColour(wxColour(80, 80, 80));
-        loadingSizer->Add(label, 0, wxALIGN_CENTER_HORIZONTAL);
-        loadingSizer->AddSpacer(14);
-
-        m_LoadingGauge = new wxGauge(m_LoadingPanel, wxID_ANY, 100,
-            wxDefaultPosition, wxSize(240, 8), wxGA_HORIZONTAL);
-        m_LoadingGauge->Pulse();
-        loadingSizer->Add(m_LoadingGauge, 0, wxALIGN_CENTER_HORIZONTAL);
-
-        loadingSizer->AddStretchSpacer();
-        m_LoadingPanel->SetSizer(loadingSizer);
-    }
 
     m_DashboardPanel = new DashboardPanel(m_ContentContainer);
     m_TestPanel = new TestPanel(m_ContentContainer);
@@ -73,9 +51,12 @@ MainFrame::MainFrame()
             // Restart the refresh timer with the new interval.
             m_RefreshTimer.Stop();
             m_RefreshTimer.Start(settings.RefreshIntervalSeconds * 1000);
+
+            // Actually repaint the whole app for dark mode.
+            Theme::SetDark(settings.DarkMode);
+            Theme::ApplyRecursive(this);
         });
 
-    contentSizer->Add(m_LoadingPanel, 1, wxEXPAND);
     contentSizer->Add(m_DashboardPanel, 1, wxEXPAND);
     contentSizer->Add(m_TestPanel, 1, wxEXPAND);
     contentSizer->Add(m_ReportPanel, 1, wxEXPAND);
@@ -83,7 +64,7 @@ MainFrame::MainFrame()
 
     m_ContentContainer->SetSizer(contentSizer);
 
-    contentSizer->Show(m_DashboardPanel, false);
+    contentSizer->Show(m_DashboardPanel, true);
     contentSizer->Show(m_TestPanel, false);
     contentSizer->Show(m_ReportPanel, false);
     contentSizer->Show(m_SettingsPanel, false);
@@ -103,10 +84,8 @@ MainFrame::MainFrame()
     // Bind Background Hardware Monitoring Event
     Bind(EVT_SYSTEM_INFO_READY, &MainFrame::OnSystemInfoReady, this);
     Bind(wxEVT_TIMER, &MainFrame::OnRefreshTimer, this, m_RefreshTimer.GetId());
-    Bind(wxEVT_TIMER, &MainFrame::OnLoadingPulseTimer, this, m_LoadingPulseTimer.GetId());
 
     // Bind Menu Events
-    Bind(wxEVT_MENU, &MainFrame::OnMenuNewScan, this, ID_MENU_NEW_SCAN);
     Bind(wxEVT_MENU, &MainFrame::OnMenuExportReport, this, ID_MENU_SAVE_REPORT);
     Bind(wxEVT_MENU, &MainFrame::OnMenuExportReport, this, ID_MENU_EXPORT_HTML);
     Bind(wxEVT_MENU, &MainFrame::OnMenuExportReport, this, ID_MENU_EXPORT_JSON);
@@ -121,12 +100,10 @@ MainFrame::MainFrame()
 
     Centre();
 
-    // Animate the loading gauge (wxGauge needs Pulse() called
-    // periodically to show indeterminate progress).
-    m_LoadingPulseTimer.Start(100);
-
-    // Start background hardware scanning. The first result flips us
-    // from the loading page over to the Dashboard (see OnSystemInfoReady).
+    // Kick off the first background hardware scan. The Dashboard already
+    // shows sensible placeholder text (e.g. "Scanning...") until this
+    // completes -- navigation is never blocked while it runs, and
+    // "New Scan" from the menu just repeats this same quiet update.
     m_MonitorService = std::make_unique<SystemMonitorService>(this);
     m_MonitorService->RefreshAsync();
 
@@ -144,13 +121,6 @@ void MainFrame::ShowPage(int index)
     if (!sizer)
         return;
 
-    // Once the first scan has completed we never show the loading page
-    // again; until then, keep it up regardless of what the sidebar asks
-    // for (there's nothing real to show yet).
-    if (!m_FirstLoadComplete)
-        return;
-
-    sizer->Show(m_LoadingPanel, false);
     sizer->Show(m_DashboardPanel, index == 0);
     sizer->Show(m_TestPanel, index == 1);
     sizer->Show(m_ReportPanel, index == 2);
@@ -174,6 +144,8 @@ void MainFrame::OnSystemInfoReady(wxCommandEvent&)
 
     const SystemInfo& info = m_MonitorService->LatestInfo();
 
+    // Just refresh each page's data in place -- no page switching, no
+    // loading screen. Whichever page the user is looking at stays put.
     if (m_DashboardPanel)
         m_DashboardPanel->UpdateData(info);
 
@@ -182,34 +154,9 @@ void MainFrame::OnSystemInfoReady(wxCommandEvent&)
 
     if (m_TestPanel)
         m_TestPanel->UpdateData(info);
-
-    if (!m_FirstLoadComplete)
-    {
-        m_FirstLoadComplete = true;
-        m_LoadingPulseTimer.Stop();
-
-        wxSizer* sizer = m_ContentContainer->GetSizer();
-        if (sizer)
-        {
-            sizer->Show(m_LoadingPanel, false);
-            sizer->Show(m_DashboardPanel, true);
-            m_ContentContainer->Layout();
-        }
-    }
 }
 
 void MainFrame::OnRefreshTimer(wxTimerEvent&)
-{
-    RefreshHardwareData();
-}
-
-void MainFrame::OnLoadingPulseTimer(wxTimerEvent&)
-{
-    if (m_LoadingGauge)
-        m_LoadingGauge->Pulse();
-}
-
-void MainFrame::OnMenuNewScan(wxCommandEvent&)
 {
     RefreshHardwareData();
 }
@@ -252,10 +199,11 @@ void MainFrame::OnMenuAbout(wxCommandEvent&)
     aboutInfo.SetName("SysLifeChecker");
     aboutInfo.SetVersion("1.0.0");
     aboutInfo.SetDescription(
-        "Lightweight, accessible System Specification, SSD/HDD Lifetime, Battery Health, "
-        "and Hardware Diagnostics Software.");
-    aboutInfo.SetCopyright("(C) 2026 SysLifeChecker Contributors");
-    aboutInfo.AddDeveloper("SysLifeChecker Team");
+        "A simple, friendly way to check your PC's health -- battery, storage, "
+        "memory, and more -- explained in plain language, with technical detail "
+        "available for anyone who wants it.");
+    aboutInfo.SetCopyright("(C) 2026 Maaz Ali");
+    aboutInfo.AddDeveloper("Maaz Ali (maazali04)");
 
     wxAboutBox(aboutInfo, this);
 }

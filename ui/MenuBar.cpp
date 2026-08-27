@@ -6,7 +6,6 @@ wxMenuBar* MenuBar::Create()
 
     // ================= FILE =================
     wxMenu* fileMenu = new wxMenu();
-    fileMenu->Append(ID_MENU_NEW_SCAN, "&New Scan\tCtrl+R");
     fileMenu->Append(ID_MENU_SAVE_REPORT, "&Save / Export Report...\tCtrl+S");
 
     wxMenu* exportMenu = new wxMenu();
@@ -24,8 +23,6 @@ wxMenuBar* MenuBar::Create()
     viewMenu->Append(ID_MENU_VIEW_TEST, "&Hardware Tests\tCtrl+2");
     viewMenu->Append(ID_MENU_VIEW_REPORT, "&Full Report\tCtrl+3");
     viewMenu->Append(ID_MENU_VIEW_SETTINGS, "&Settings\tCtrl+4");
-    viewMenu->AppendSeparator();
-    viewMenu->Append(ID_MENU_NEW_SCAN, "&Refresh Hardware Data\tF5");
 
     // ================= TEST =================
     wxMenu* testMenu = new wxMenu();

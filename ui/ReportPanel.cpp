@@ -174,10 +174,8 @@ void ReportPanel::PopulateReportData(const SystemInfo& info)
         storageData.emplace_back(prefix + " Health Status", wxString::Format("%d%% - %s", d.SMART.HealthPercent, d.HealthStatus));
         if (d.SMART.PowerOnHours > 0)
             storageData.emplace_back(prefix + " Power-On Hours", wxString::Format("%llu hours (~%.1f years)", d.SMART.PowerOnHours, d.SMART.PowerOnHours / (24.0 * 365.25)));
-        if (d.SMART.EstimatedRemainingYears > 0.0)
-            storageData.emplace_back(prefix + " Estimated Life Remaining", wxString::Format("~%.1f Years", d.SMART.EstimatedRemainingYears));
         if (d.SMART.Temperature > 0.0)
-            storageData.emplace_back(prefix + " Operating Temp", wxString::Format("%.0f \u00B0C", d.SMART.Temperature));
+            storageData.emplace_back(prefix + " Operating Temp", wxString::Format(L"%.0f \u00B0C", d.SMART.Temperature));
         if (d.SMART.PercentageUsed > 0)
             storageData.emplace_back(prefix + " NVMe Life Used", wxString::Format("%llu%%", d.SMART.PercentageUsed));
         if (d.SMART.DataWrittenGB > 0)
