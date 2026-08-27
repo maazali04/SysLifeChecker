@@ -30,11 +30,11 @@ g++ src/*.cpp ^
     -lwininet ^
     -lhid ^
     -luuid ^
-    -o SysLifeChecker_CLI.exe
+    -o SysLifeChecker_ConsoleDevTool.exe
 
 if %errorlevel% equ 0 (
-    echo [SUCCESS] SysLifeChecker_CLI.exe built successfully!
-    .\SysLifeChecker_CLI.exe
+    echo [SUCCESS] SysLifeChecker_ConsoleDevTool.exe built successfully!
+    .\SysLifeChecker_ConsoleDevTool.exe
 ) else (
     echo [ERROR] Compilation failed!
 )

@@ -16,6 +16,7 @@ wxEND_EVENT_TABLE()
 namespace
 {
     constexpr int ID_REFRESH_TIMER = wxID_HIGHEST + 501;
+    constexpr int ID_LOADING_PULSE_TIMER = wxID_HIGHEST + 502;
 }
 
 MainFrame::MainFrame()
@@ -24,22 +25,56 @@ MainFrame::MainFrame()
               "SysLifeChecker - Hardware & Life Monitor",
               wxDefaultPosition,
               wxSize(1240, 740)),
+      m_LoadingPulseTimer(this, ID_LOADING_PULSE_TIMER),
       m_RefreshTimer(this, ID_REFRESH_TIMER)
 {
     SetIcon(wxIcon("resources/icons/SysLifeChecker.ico", wxBITMAP_TYPE_ICO));
 
     SetMenuBar(MenuBar::Create());
 
-    wxPanel *root = new wxPanel(this);
-    wxBoxSizer *sizer = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer *frameSizer = new wxBoxSizer(wxVERTICAL);
 
     //--------------------------------------------------
-    // Content area: all four pages live here, stacked in one sizer,
-    // with only the active one shown. Every page is reachable
-    // immediately -- none of them wait on the background scan, so
-    // Settings/Report/Test are never blocked by a slow first refresh.
+    // Loading screen -- the ONLY thing visible until the first scan
+    // finishes. No sidebar, no pages, nothing to click that could get
+    // stuck: it's either this, or the real app.
     //--------------------------------------------------
-    m_ContentContainer = new wxPanel(root);
+    m_LoadingPanel = new wxPanel(this);
+    m_LoadingPanel->SetBackgroundColour(wxColour(245, 247, 250));
+    {
+        wxBoxSizer* loadingSizer = new wxBoxSizer(wxVERTICAL);
+        loadingSizer->AddStretchSpacer();
+
+        wxBitmap logo("resources/icons/SysLifeChecker_64.png", wxBITMAP_TYPE_PNG);
+        if (logo.IsOk())
+        {
+            auto* logoBmp = new wxStaticBitmap(m_LoadingPanel, wxID_ANY, logo);
+            loadingSizer->Add(logoBmp, 0, wxALIGN_CENTER_HORIZONTAL);
+            loadingSizer->AddSpacer(18);
+        }
+
+        auto* label = new wxStaticText(m_LoadingPanel, wxID_ANY, "Scanning your system...");
+        label->SetFont(FontManager::Medium(13));
+        label->SetForegroundColour(wxColour(80, 80, 80));
+        loadingSizer->Add(label, 0, wxALIGN_CENTER_HORIZONTAL);
+        loadingSizer->AddSpacer(14);
+
+        m_LoadingGauge = new wxGauge(m_LoadingPanel, wxID_ANY, 100,
+            wxDefaultPosition, wxSize(240, 8), wxGA_HORIZONTAL);
+        loadingSizer->Add(m_LoadingGauge, 0, wxALIGN_CENTER_HORIZONTAL);
+
+        loadingSizer->AddStretchSpacer();
+        m_LoadingPanel->SetSizer(loadingSizer);
+    }
+
+    //--------------------------------------------------
+    // The real app: sidebar + all four pages. Built immediately (so
+    // it's ready the instant data arrives) but not shown yet.
+    //--------------------------------------------------
+    m_Root = new wxPanel(this);
+    wxBoxSizer *sizer = new wxBoxSizer(wxHORIZONTAL);
+
+    m_ContentContainer = new wxPanel(m_Root);
     wxBoxSizer *contentSizer = new wxBoxSizer(wxVERTICAL);
 
     m_DashboardPanel = new DashboardPanel(m_ContentContainer);
@@ -69,21 +104,29 @@ MainFrame::MainFrame()
     contentSizer->Show(m_ReportPanel, false);
     contentSizer->Show(m_SettingsPanel, false);
 
-    //--------------------------------------------------
-    // Sidebar
-    //--------------------------------------------------
-    m_Sidebar = new Sidebar(root, [this](int page) {
+    m_Sidebar = new Sidebar(m_Root, [this](int page) {
         ShowPage(page);
     });
 
     sizer->Add(m_Sidebar, 0, wxEXPAND | wxALL, 0);
     sizer->Add(m_ContentContainer, 1, wxEXPAND);
 
-    root->SetSizer(sizer);
+    m_Root->SetSizer(sizer);
+
+    //--------------------------------------------------
+    // Only the loading screen is visible at launch.
+    //--------------------------------------------------
+    frameSizer->Add(m_LoadingPanel, 1, wxEXPAND);
+    frameSizer->Add(m_Root, 1, wxEXPAND);
+    SetSizer(frameSizer);
+
+    frameSizer->Show(m_LoadingPanel, true);
+    frameSizer->Show(m_Root, false);
 
     // Bind Background Hardware Monitoring Event
     Bind(EVT_SYSTEM_INFO_READY, &MainFrame::OnSystemInfoReady, this);
     Bind(wxEVT_TIMER, &MainFrame::OnRefreshTimer, this, m_RefreshTimer.GetId());
+    Bind(wxEVT_TIMER, &MainFrame::OnLoadingPulseTimer, this, m_LoadingPulseTimer.GetId());
 
     // Bind Menu Events
     Bind(wxEVT_MENU, &MainFrame::OnMenuExportReport, this, ID_MENU_SAVE_REPORT);
@@ -100,10 +143,11 @@ MainFrame::MainFrame()
 
     Centre();
 
-    // Kick off the first background hardware scan. The Dashboard already
-    // shows sensible placeholder text (e.g. "Scanning...") until this
-    // completes -- navigation is never blocked while it runs, and
-    // "New Scan" from the menu just repeats this same quiet update.
+    // Animate the loading gauge.
+    m_LoadingPulseTimer.Start(100);
+
+    // Kick off the first background hardware scan. Everything above is
+    // hidden behind the loading screen until this completes.
     m_MonitorService = std::make_unique<SystemMonitorService>(this);
     m_MonitorService->RefreshAsync();
 
@@ -144,8 +188,6 @@ void MainFrame::OnSystemInfoReady(wxCommandEvent&)
 
     const SystemInfo& info = m_MonitorService->LatestInfo();
 
-    // Just refresh each page's data in place -- no page switching, no
-    // loading screen. Whichever page the user is looking at stays put.
     if (m_DashboardPanel)
         m_DashboardPanel->UpdateData(info);
 
@@ -154,11 +196,31 @@ void MainFrame::OnSystemInfoReady(wxCommandEvent&)
 
     if (m_TestPanel)
         m_TestPanel->UpdateData(info);
+
+    if (!m_FirstLoadComplete)
+    {
+        m_FirstLoadComplete = true;
+        m_LoadingPulseTimer.Stop();
+
+        wxSizer* sizer = GetSizer();
+        if (sizer)
+        {
+            sizer->Show(m_LoadingPanel, false);
+            sizer->Show(m_Root, true);
+            Layout();
+        }
+    }
 }
 
 void MainFrame::OnRefreshTimer(wxTimerEvent&)
 {
     RefreshHardwareData();
+}
+
+void MainFrame::OnLoadingPulseTimer(wxTimerEvent&)
+{
+    if (m_LoadingGauge)
+        m_LoadingGauge->Pulse();
 }
 
 void MainFrame::OnMenuExportReport(wxCommandEvent& event)

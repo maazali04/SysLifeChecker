@@ -8,7 +8,7 @@
 
 const wxColour Theme::Background(245, 247, 250);
 const wxColour Theme::Surface(255, 255, 255);
-const wxColour Theme::Sidebar(255, 255, 255);
+const wxColour Theme::SidebarLegacy(255, 255, 255);
 const wxColour Theme::Border(220, 223, 228);
 
 // ===== Text =====

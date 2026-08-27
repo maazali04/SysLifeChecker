@@ -176,7 +176,7 @@ void Sidebar::OnPaint(wxPaintEvent&)
     dc.SetBackground(wxBrush(GetBackgroundColour()));
     dc.Clear();
 
-    dc.SetPen(wxPen(wxColour(235,235,235),1));
+    dc.SetPen(wxPen(Theme::BorderColour(),1));
 
     int w, h;
     GetClientSize(&w, &h);

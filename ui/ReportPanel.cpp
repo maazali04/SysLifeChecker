@@ -1,6 +1,7 @@
 #include "ReportPanel.hpp"
 #include "controls/CardPanel.hpp"
 #include "FontManager.hpp"
+#include "Theme.hpp"
 #include "Storage.hpp"
 #include "Battery.hpp"
 #include "RAM.hpp"
@@ -322,6 +323,11 @@ void ReportPanel::UpdateData(const SystemInfo& info)
         m_CategoryList->SetSelection(0);
         ShowCategory(m_ReportData.begin()->first);
     }
+
+    // ShowCategory() already re-applies the theme to the detail pane;
+    // this covers the category list itself and anything else on this
+    // panel that was just rebuilt in PopulateReportData()/above.
+    Theme::ApplyRecursive(this);
 }
 
 void ReportPanel::OnCategorySelected(wxCommandEvent& event)
@@ -365,6 +371,11 @@ void ReportPanel::ShowCategory(const wxString& category)
 
     m_DetailScroll->FitInside();
     m_DetailScroll->Layout();
+
+    // Every row here is a freshly-created wxStaticText with hard-coded
+    // light-mode colours -- without this, switching categories while
+    // Dark Mode is on would silently revert this pane back to light text.
+    Theme::ApplyRecursive(m_DetailScroll);
 }
 
 void ReportPanel::OnExportClicked(wxCommandEvent&)

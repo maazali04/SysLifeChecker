@@ -15,6 +15,7 @@ public:
     wxBitmap m_BlueBitmap;
 
     void SetSelected(bool selected);
+    void ApplyTheme();
     wxString GetText() const
     {
         return m_Text->GetLabel();

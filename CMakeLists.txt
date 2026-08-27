@@ -89,13 +89,16 @@ target_link_libraries(SysLifeChecker PRIVATE
     uuid
 )
 
-# CLI / Diagnostic Console Tool
-add_executable(SysLifeChecker_CLI
+# CLI / Diagnostic Console Tool -- named distinctly so it can never be
+# mistaken for the real app if both end up sitting in the same folder;
+# double-clicking a plain console .exe with no pause is exactly what
+# causes a window to flash open and close instantly.
+add_executable(SysLifeChecker_ConsoleDevTool
     ${BACKEND_SOURCES}
     src/main.cpp
 )
 
-target_link_libraries(SysLifeChecker_CLI PRIVATE
+target_link_libraries(SysLifeChecker_ConsoleDevTool PRIVATE
     ole32
     oleaut32
     wbemuuid

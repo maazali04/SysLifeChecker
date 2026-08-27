@@ -1,6 +1,7 @@
 #include "DashboardPanel.hpp"
 #include "controls/CardPanel.hpp"
 #include "FontManager.hpp"
+#include "Theme.hpp"
 #include "Battery.hpp"
 #include "RAM.hpp"
 #include <wx/statline.h>
@@ -284,12 +285,23 @@ void DashboardPanel::UpdateData(const SystemInfo &info)
             m_BatteryBadge->SetBackgroundColour(wxColour(255, 248, 220));
         }
 
-        if (bat.FullChargeCapacitymWh > 0 && bat.DesignCapacitymWh > 0)
+        if (bat.DesignCapacitymWh > 0)
         {
-            AddBatteryRow("Capacity", wxString::Format("%.1f Wh / %.1f Wh",
-                bat.FullChargeCapacitymWh / 1000.0, bat.DesignCapacitymWh / 1000.0));
+            AddBatteryRow("Design Capacity (original)", wxString::Format("%.1f Wh", bat.DesignCapacitymWh / 1000.0));
         }
-        else
+
+        if (bat.FullChargeCapacitymWh > 0)
+        {
+            AddBatteryRow("Full Charge Capacity (now)", wxString::Format("%.1f Wh", bat.FullChargeCapacitymWh / 1000.0));
+        }
+
+        if (bat.RemainingCapacitymWh > 0)
+        {
+            AddBatteryRow("Currently Available", wxString::Format("%.1f Wh (%llu%%)",
+                bat.RemainingCapacitymWh / 1000.0, bat.RemainingCapacityPercent));
+        }
+
+        if (bat.DesignCapacitymWh == 0 && bat.FullChargeCapacitymWh == 0)
         {
             AddBatteryRow("Status", BatteryStatusToString(bat.Status));
         }
@@ -535,4 +547,10 @@ void DashboardPanel::UpdateData(const SystemInfo &info)
 
     m_SummaryCard->Layout();
     Layout();
+
+    // The rows above are rebuilt from scratch on every refresh with
+    // hard-coded light-mode colours, which would silently undo Dark
+    // Mode on the very next scan. Re-apply the current theme to what
+    // we just rebuilt so it stays correct.
+    Theme::ApplyRecursive(this);
 }

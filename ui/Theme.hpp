@@ -11,7 +11,7 @@ public:
 
     static const wxColour Background;
     static const wxColour Surface;
-    static const wxColour Sidebar;
+    static const wxColour SidebarLegacy; // unused legacy constant; see SidebarBackground() below for the real, dynamic value
     static const wxColour Border;
 
     // ===== Text =====

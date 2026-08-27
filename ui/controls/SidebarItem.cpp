@@ -1,5 +1,6 @@
 #include "SidebarItem.hpp"
 #include "../FontManager.hpp"
+#include "../Theme.hpp"
 
 SidebarItem::SidebarItem(
     wxWindow* parent,
@@ -12,7 +13,7 @@ SidebarItem::SidebarItem(
               wxSize(-1,42),
               wxBORDER_NONE)
 {
-    SetBackgroundColour(*wxWHITE);
+    SetBackgroundColour(Theme::SidebarBackground());
 
     m_BlackBitmap.LoadFile(blackIcon, wxBITMAP_TYPE_PNG);
     m_BlueBitmap.LoadFile(blueIcon, wxBITMAP_TYPE_PNG);
@@ -39,7 +40,7 @@ SidebarItem::SidebarItem(
         text);
 
     m_Text->SetFont(FontManager::Medium(13));
-    m_Text->SetForegroundColour(wxColour(45,45,45));
+    m_Text->SetForegroundColour(Theme::SidebarTextColour());
 
     sizer->Add(
         m_Text,
@@ -80,16 +81,16 @@ void SidebarItem::SetSelected(bool selected)
 
     if (selected)
     {
-        bg = wxColour(242,245,250);
+        bg = Theme::SidebarItemHighlightBackground();
 
-        m_Text->SetForegroundColour(wxColour(0,120,215));
+        m_Text->SetForegroundColour(Theme::Accent);
         m_Icon->SetBitmap(m_BlueBitmap);
     }
     else
     {
-        bg = *wxWHITE;
+        bg = Theme::SidebarBackground();
 
-        m_Text->SetForegroundColour(wxColour(45,45,45));
+        m_Text->SetForegroundColour(Theme::SidebarTextColour());
         m_Icon->SetBitmap(m_BlackBitmap);
     }
 
@@ -102,6 +103,14 @@ void SidebarItem::SetSelected(bool selected)
     m_Icon->Refresh();
 }
 
+void SidebarItem::ApplyTheme()
+{
+    // SetSelected() already derives every colour it needs from Theme,
+    // so simply re-running it with the current selection state
+    // re-paints this item for the new theme.
+    SetSelected(m_Selected);
+}
+
 void SidebarItem::OnMouseMove(wxMouseEvent& event)
 {
     if (m_Selected)
@@ -110,13 +119,13 @@ void SidebarItem::OnMouseMove(wxMouseEvent& event)
         return;
     }
 
-    wxColour bg(242,245,250);
+    wxColour bg = Theme::SidebarItemHighlightBackground();
 
     SetBackgroundColour(bg);
     m_Text->SetBackgroundColour(bg);
     m_Icon->SetBackgroundColour(bg);
 
-    m_Text->SetForegroundColour(wxColour(0,120,215));
+    m_Text->SetForegroundColour(Theme::Accent);
     m_Icon->SetBitmap(m_BlueBitmap);
 
     Refresh();
@@ -141,13 +150,13 @@ void SidebarItem::OnMouseLeave(wxMouseEvent& event)
         return;
     }
 
-    wxColour bg = *wxWHITE;
+    wxColour bg = Theme::SidebarBackground();
 
     SetBackgroundColour(bg);
     m_Text->SetBackgroundColour(bg);
     m_Icon->SetBackgroundColour(bg);
 
-    m_Text->SetForegroundColour(wxColour(45,45,45));
+    m_Text->SetForegroundColour(Theme::SidebarTextColour());
     m_Icon->SetBitmap(m_BlackBitmap);
 
     Refresh();

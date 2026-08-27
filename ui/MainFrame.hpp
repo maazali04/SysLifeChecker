@@ -29,6 +29,17 @@ private:
     SettingsDialog* m_SettingsPanel = nullptr;
     Sidebar* m_Sidebar = nullptr;
 
+    // The whole app (sidebar included) lives in this container. Until
+    // the first scan completes, m_Root stays hidden and m_LoadingPanel
+    // -- a plain full-window loading screen with no sidebar/navigation
+    // at all -- is the only thing visible. Once real data exists, we
+    // swap to m_Root once and never go back.
+    wxPanel* m_Root = nullptr;
+    wxPanel* m_LoadingPanel = nullptr;
+    wxGauge* m_LoadingGauge = nullptr;
+    wxTimer m_LoadingPulseTimer;
+    bool m_FirstLoadComplete = false;
+
     // Periodic background refresh; interval is controlled from Settings.
     wxTimer m_RefreshTimer;
 
@@ -36,6 +47,7 @@ private:
 
     void OnSystemInfoReady(wxCommandEvent& event);
     void OnRefreshTimer(wxTimerEvent& event);
+    void OnLoadingPulseTimer(wxTimerEvent& event);
     void OnMenuExportReport(wxCommandEvent& event);
     void OnMenuRunTests(wxCommandEvent& event);
     void OnMenuAbout(wxCommandEvent& event);
